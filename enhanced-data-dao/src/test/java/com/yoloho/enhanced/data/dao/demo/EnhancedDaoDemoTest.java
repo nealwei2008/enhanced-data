@@ -182,7 +182,7 @@ public class EnhancedDaoDemoTest {
             entryMemo.setValue(newVal);
             data.put("memo", entryMemo);
             UpdateEntry entryDateline = new UpdateEntry();
-            entryDateline.setValue("@dateline@ - @dateline@ - 100000000");
+            entryDateline.setValue("@sinceline@ - @sinceline@ - 100000000");
             entryDateline.setPlain(true);
             data.put("dateline", entryDateline);
             UpdateEntry otherIdEntry = new UpdateEntry();

@@ -23,7 +23,7 @@ import com.yoloho.enhanced.data.cache.redis.api.RedisService;
 
 /**
  * @author mei
- * @date 26/12/2017
+ * @since 26/12/2017
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("classpath:context-redis.xml")
