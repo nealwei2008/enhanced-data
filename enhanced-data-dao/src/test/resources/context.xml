@@ -14,9 +14,9 @@
 	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
 
 		<!-- 基本属性 url、user、password -->
-		<property name="url" value="jdbc:mysql://192.168.127.56:3306/test?useUnicode=true&amp;characterEncoding=utf-8&amp;allowMultiQueries=true" />
+		<property name="url" value="jdbc:mysql://192.168.110.240:3306/test?useUnicode=true&amp;characterEncoding=utf-8&amp;allowMultiQueries=true" />
 		<property name="username" value="test" />
-		<property name="password" value="test" />
+		<property name="password" value="Test@123" />
 
 		<!-- 配置初始化大小、最小、最大 -->
 		<property name="initialSize" value="3" />

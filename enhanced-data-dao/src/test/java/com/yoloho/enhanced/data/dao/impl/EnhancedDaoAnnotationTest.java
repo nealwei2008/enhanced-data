@@ -29,9 +29,9 @@ import com.yoloho.enhanced.data.dao.impl.EnhancedDaoImplTest.UnitTestUserMapping
 @SpringBootTest
 @EnableSqlSessionFactory(
     name = "testSessionFactory",
-    connectionUrl = "jdbc:mysql://192.168.127.56:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true", 
+    connectionUrl = "jdbc:mysql://192.168.110.240:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true", 
     username = "test",
-    password = "test" 
+    password = "Test@123" 
 )
 @EnableEnhancedDao(
     scanPath = "com.yoloho.enhanced.data.dao.impl",
@@ -118,6 +118,13 @@ public class EnhancedDaoAnnotationTest {
             Assert.assertNotNull(mappingList);
             Assert.assertEquals(3, mappingList.size());
             Assert.assertTrue(mappingList.get(0).getMemo().contains(tail));
+        }
+        /**
+         * remove
+         */
+        {
+            DynamicQueryFilter filter = new DynamicQueryFilter();
+            logger.info("remove {} records", unitTestUserMappingEnhancedDao.remove(filter.getQueryData()));
         }
     }
 

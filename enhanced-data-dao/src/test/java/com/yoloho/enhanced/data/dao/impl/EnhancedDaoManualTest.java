@@ -15,7 +15,7 @@ import com.yoloho.enhanced.data.dao.support.EnhancedDaoParser;
 
 /**
  * Direct connect to jdbc
- * 
+ * Test with mix of xml and java code
  * @author jason
  *
  */

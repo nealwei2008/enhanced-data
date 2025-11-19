@@ -236,7 +236,7 @@ public interface EnhancedDao<T, PK extends Serializable> {
      * 
      * @param fieldName
      * @param value
-     * @return
+     * @return 查询记录的count数
      */
     public <TT> int count(@NonNull String fieldName, @NonNull TT value);
     
@@ -245,7 +245,7 @@ public interface EnhancedDao<T, PK extends Serializable> {
      * 
      * @param Map
      *            queryData
-     * @return
+     * @return 查询记录的count数
      */
     public int count(@NonNull QueryData queryData);
     
@@ -254,7 +254,7 @@ public interface EnhancedDao<T, PK extends Serializable> {
      * 
      * @param Map
      *            queryData
-     * @return
+     * @return 查询记录的sum总数
      */
     public int sum(@NonNull String fieldName, @NonNull QueryData queryData);
 
@@ -262,7 +262,7 @@ public interface EnhancedDao<T, PK extends Serializable> {
      * 修改
      * 
      * @param bean
-     * @return
+     * @return int The number of rows affected by the update.
      */
     public int update(@NonNull T bean);
 
@@ -272,7 +272,7 @@ public interface EnhancedDao<T, PK extends Serializable> {
      * 
      * @param bean
      * @param queryData
-     * @return
+     * @return int The number of rows affected by the update.
      */
     public int update(@NonNull Map<String, UpdateEntry> data, @NonNull QueryData queryData);
 
@@ -280,7 +280,7 @@ public interface EnhancedDao<T, PK extends Serializable> {
      * 批量更新
      * 
      * @param beanList
-     * @return
+     * @return int The number of rows affected by the update.
      */
     public int update(@NonNull List<T> beanList);
     

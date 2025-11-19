@@ -3,6 +3,8 @@ package com.yoloho.enhanced.data.dao.demo;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+
 import javax.annotation.Resource;
 
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -27,9 +29,8 @@ import com.yoloho.enhanced.data.dao.impl.EnhancedDaoImplTest.UnitTestUserMapping
 @ContextConfiguration(locations = "classpath:context.xml")
 /**
  * EnhancedDao demo
- * 
+ * Test with different packages scanning 
  * @author jason
- *
  */
 public class EnhancedDaoDemoTest {
     private final static Logger logger = LoggerFactory.getLogger(EnhancedDaoDemoTest.class.getSimpleName());
@@ -46,6 +47,26 @@ public class EnhancedDaoDemoTest {
      */
     @Test
     public void getFindTest() {
+        EnhancedDaoImpl<UnitTestUser, Integer> dao = new EnhancedDaoImpl<UnitTestUser, Integer>();
+        dao.setSqlSessionFactory(sqlSessionFactory);
+        dao.setTableName(UnitTestUser.class);
+        /**
+         * remove and insert
+         */
+        {
+            DynamicQueryFilter filter = new DynamicQueryFilter();
+            filter.equalPair("name", "myname");
+            dao.remove(filter.getQueryData());
+        }
+        {
+            for (int i = 1; i < 10; i++) {
+                UnitTestUser user = new UnitTestUser();
+                user.setId(i);
+                user.setName("myname");
+                UnitTestUser insertAndReturn = dao.insertAndReturn(user);
+                assertEquals("myname", insertAndReturn.getName());
+            }
+        }
         /**
          * get
          */
@@ -106,6 +127,12 @@ public class EnhancedDaoDemoTest {
             DynamicQueryFilter filter = new DynamicQueryFilter();
             int sum = dao.sum("id", filter.getQueryData());
             Assert.assertTrue(sum > 0);
+        }
+        /**
+         * remove
+         */
+        {
+            dao.remove(new DynamicQueryFilter().equalPair("name", "myname").getQueryData());
         }
     }
     /**
@@ -175,14 +202,14 @@ public class EnhancedDaoDemoTest {
             // 试验性功能，条件批量修改
             String newVal = "batch update!!!!%";
             DynamicQueryFilter filter = new DynamicQueryFilter();
-            filter.greatOrEqual("otherId", 113);
+            filter.greaterOrEqual("otherId", 113);
             filter.lessThan("otherId", 117);
             Map<String, UpdateEntry> data = Maps.newHashMap();
             UpdateEntry entryMemo = new UpdateEntry();
             entryMemo.setValue(newVal);
             data.put("memo", entryMemo);
             UpdateEntry entryDateline = new UpdateEntry();
-            entryDateline.setValue("@sinceline@ - @sinceline@ - 100000000");
+            entryDateline.setValue("@dateline@ - @dateline@ - 100000000");
             entryDateline.setPlain(true);
             data.put("dateline", entryDateline);
             UpdateEntry otherIdEntry = new UpdateEntry();
@@ -195,7 +222,7 @@ public class EnhancedDaoDemoTest {
             Assert.assertEquals(0, list.size());
             //check new
             filter = new DynamicQueryFilter();
-            filter.greatOrEqual("otherId", 213);
+            filter.greaterOrEqual("otherId", 213);
             filter.lessThan("otherId", 217);
             list = unitTestUserMappingEnhancedDao.find(filter.getQueryData());
             Assert.assertEquals(4, list.size());

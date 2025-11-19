@@ -9,14 +9,15 @@ import java.lang.annotation.Target;
 
 import org.springframework.context.annotation.Import;
 
-import com.yoloho.enhanced.data.dao.config.EnableEnhancedDaoConfiguration;
+import com.yoloho.enhanced.data.dao.config.EnableDruidMonitorConfiguration;
 import com.yoloho.enhanced.data.dao.monitor.MonitorCallback;
 
 @Inherited
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Import(EnableEnhancedDaoConfiguration.class)
+// TODO Maybe it should be EnableDruidMonitorConfiguration, but has not tested.
+@Import(EnableDruidMonitorConfiguration.class)
 public @interface EnableDruidMonitor {
     /**
      * Name of the project to identify the monitor data.

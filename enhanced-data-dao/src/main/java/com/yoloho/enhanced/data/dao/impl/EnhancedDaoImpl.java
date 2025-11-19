@@ -27,7 +27,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.yoloho.enhanced.common.util.StringUtil;
 import com.yoloho.enhanced.data.dao.api.EnhancedDao;
-import com.yoloho.enhanced.data.dao.api.FieldName;
 import com.yoloho.enhanced.data.dao.api.IgnoreKey;
 import com.yoloho.enhanced.data.dao.api.PrimaryKey;
 import com.yoloho.enhanced.data.dao.api.UnionPrimaryKey;
@@ -148,7 +147,6 @@ public class EnhancedDaoImpl<T, PK extends Serializable> extends SqlSessionDaoSu
      * 
      * @param tableName
      */
-    @SuppressWarnings("deprecation")
     public void setTableName(String tableName, Class<T> cls) {
         this.beanClass = cls;
         if (tableName != null && tableName.length() > 0) {
@@ -196,15 +194,7 @@ public class EnhancedDaoImpl<T, PK extends Serializable> extends SqlSessionDaoSu
             }
             String propertyName = StringUtil.toCamel(fieldName);
             String columnName = null;
-            /**
-             * 这里特地为恶心的旧逻辑做了些兼容努力，但一般情况请禁止使用
-             */
-            if (field.isAnnotationPresent(FieldName.class)) {
-                FieldName anno = field.getAnnotation(FieldName.class);
-                columnName = anno.value();
-            } else {
-                columnName = StringUtil.toUnderline(fieldName);
-            }
+            columnName = StringUtil.toUnderline(fieldName);
             column.setColumnName(columnName);
             column.setPropertyName(propertyName);
             this.fieldsMapping.put(propertyName, column);
@@ -363,29 +353,29 @@ public class EnhancedDaoImpl<T, PK extends Serializable> extends SqlSessionDaoSu
                     if (column.isAutoIncrement()) {
                         Field field = bean.getClass().getDeclaredField(column.getPropertyName());
                         if (field != null) {
-                            if (!field.isAccessible()) {
+                            if (!field.canAccess(bean)) {
                                 field.setAccessible(true);
                             }
                             if (field.getType() == int.class) {
                                 field.setInt(bean, (int) autoIncrementKey);
                             } else if (Integer.class.isAssignableFrom(field.getType())) {
-                                field.set(bean, new Integer((int)autoIncrementKey));
+                                field.set(bean, Integer.valueOf((int)autoIncrementKey));
                             } else if (field.getType() == long.class) {
                                 field.setLong(bean, autoIncrementKey);
                             } else if (Long.class.isAssignableFrom(field.getType())) {
-                                field.set(bean, new Long(autoIncrementKey));
+                                field.set(bean, Long.valueOf(autoIncrementKey));
                             } else if (field.getType() == short.class) {
                                 field.setShort(bean, (short) autoIncrementKey);
                             } else if (Short.class.isAssignableFrom(field.getType())) {
-                                field.set(bean, new Short((short) autoIncrementKey));
+                                field.set(bean, Short.valueOf((short) autoIncrementKey));
                             } else if (field.getType() == byte.class) {
                                 field.setByte(bean, (byte) autoIncrementKey);
                             } else if (Byte.class.isAssignableFrom(field.getType())) {
-                                field.set(bean, new Byte((byte) autoIncrementKey));
+                                field.set(bean, Byte.valueOf((byte) autoIncrementKey));
                             } else if (field.getType() == char.class) {
                                 field.setChar(bean, (char) autoIncrementKey);
                             } else if (Character.class.isAssignableFrom(field.getType())) {
-                                field.set(bean, new Character((char) autoIncrementKey));
+                                field.set(bean, Character.valueOf((char) autoIncrementKey));
                             }
                         }
                         break;
@@ -735,7 +725,7 @@ public class EnhancedDaoImpl<T, PK extends Serializable> extends SqlSessionDaoSu
         try {
             Field field = bean.getClass().getDeclaredField(propertyName);
             if (field != null) {
-                if (!field.isAccessible()) {
+                if (!field.canAccess(bean)) {
                     field.setAccessible(true);
                 }
                 return field.get(bean);
@@ -865,7 +855,6 @@ public class EnhancedDaoImpl<T, PK extends Serializable> extends SqlSessionDaoSu
         return count;
     }
     
-    @SuppressWarnings("unchecked")
     @Override
     public SqlSession getSqlSession() {
         return super.getSqlSession();

@@ -1,13 +1,9 @@
 package com.yoloho.enhanced.data.dao.generator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import org.junit.Test;
 
-import com.yoloho.enhanced.data.dao.generator.GeneratedContext;
-import com.yoloho.enhanced.data.dao.generator.GeneratedField;
-import com.yoloho.enhanced.data.dao.generator.UUID32Generator;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class UUID32GeneratorTest {
     @Test

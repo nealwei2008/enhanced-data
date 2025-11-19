@@ -28,7 +28,7 @@ import com.yoloho.enhanced.data.dao.api.PrimaryKey;
 import com.yoloho.enhanced.data.dao.api.UnionPrimaryKey;
 import com.yoloho.enhanced.data.dao.api.UpdateEntry;
 import com.yoloho.enhanced.data.dao.api.filter.DynamicQueryFilter;
-import com.yoloho.enhanced.data.dao.impl.EnhancedDaoImpl;
+import com.yoloho.enhanced.data.dao.impl.EnhancedDaoImplTest.UnitTestUser;
 
 /**
  * 简单写的单元测试，直接连了个测试库
@@ -271,6 +271,23 @@ public class EnhancedDaoImplTest {
         dao.setSqlSessionFactory(sqlSessionFactory);
         dao.setTableName(UnitTestUser.class);
         /**
+         * remove and insert
+         */
+        {
+            DynamicQueryFilter filter = new DynamicQueryFilter();
+            filter.equalPair("name", "myname");
+            dao.remove(filter.getQueryData());
+        }
+        {
+            for (int i = 1; i < 10; i++) {
+                UnitTestUser user = new UnitTestUser();
+                user.setId(i);
+                user.setName("myname");
+                UnitTestUser insertAndReturn = dao.insertAndReturn(user);
+                assertEquals("myname", insertAndReturn.getName());
+            }
+        }
+        /**
          * get
          */
         {
@@ -319,6 +336,12 @@ public class EnhancedDaoImplTest {
             DynamicQueryFilter filter = new DynamicQueryFilter();
             int sum = dao.sum("id", filter.getQueryData());
             Assert.assertTrue(sum > 0);
+        }
+        /**
+         * remove
+         */
+        {
+            dao.remove(new DynamicQueryFilter().equalPair("name", "myname").getQueryData());
         }
     }
     /**
@@ -403,14 +426,14 @@ public class EnhancedDaoImplTest {
             // 试验性功能，条件批量修改
             String newVal = "batch update!!!!%";
             DynamicQueryFilter filter = new DynamicQueryFilter();
-            filter.greatOrEqual("otherId", 113);
+            filter.greaterOrEqual("otherId", 113);
             filter.lessThan("otherId", 117);
             Map<String, UpdateEntry> data = Maps.newHashMap();
             UpdateEntry entryMemo = new UpdateEntry();
             entryMemo.setValue(newVal);
             data.put("memo", entryMemo);
             UpdateEntry entryDateline = new UpdateEntry();
-            entryDateline.setValue("@sinceline@ - @sinceline@ - 100000000");
+            entryDateline.setValue("@dateline@ - @dateline@ - 100000000");
             entryDateline.setPlain(true);
             data.put("dateline", entryDateline);
             UpdateEntry otherIdEntry = new UpdateEntry();
@@ -423,7 +446,7 @@ public class EnhancedDaoImplTest {
             Assert.assertEquals(0, list.size());
             //check new
             filter = new DynamicQueryFilter();
-            filter.greatOrEqual("otherId", 213);
+            filter.greaterOrEqual("otherId", 213);
             filter.lessThan("otherId", 217);
             list = dao.find(filter.getQueryData());
             Assert.assertEquals(4, list.size());
@@ -709,7 +732,7 @@ public class EnhancedDaoImplTest {
             assertEquals("sign 1", bean.getContent());
         }
         {
-            //重复插入
+            //重复插入，不会报错，自增主键会返回原始值，但实际数据库中的内容并未更新
             UnitTestUserSignature bean = new UnitTestUserSignature();
             bean.setUid(10);
             bean.setSize(111);
@@ -732,8 +755,8 @@ public class EnhancedDaoImplTest {
             bean.setContent("sign 100");
             List<UnitTestUserSignature> beanList = daoSignature.insertAndReturn(Arrays.asList(bean, bean1), true);
             Assert.assertEquals(2, beanList.size());
-            Assert.assertEquals(new Integer(0), beanList.get(0).getId());
-            Assert.assertNotEquals(new Integer(0), beanList.get(1).getId());
+            Assert.assertEquals(Integer.valueOf(0), beanList.get(0).getId());
+            Assert.assertNotEquals(Integer.valueOf(0), beanList.get(1).getId());
    
         }
         {
