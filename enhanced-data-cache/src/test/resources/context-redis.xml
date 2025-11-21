@@ -17,9 +17,9 @@
 
     <!-- 应用Redis -->
     <bean id="redisConnectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
-        <property name="hostName" value="192.168.123.3" />
-        <property name="port" value="6381" />
-        <property name="password" value="" />
+        <property name="hostName" value="192.168.110.240" />
+        <property name="port" value="6379" />
+        <property name="password" value="87vhqEneQ5u8" />
         <property name="poolConfig" ref="poolConfig" />
     </bean>
     <bean id="redisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">

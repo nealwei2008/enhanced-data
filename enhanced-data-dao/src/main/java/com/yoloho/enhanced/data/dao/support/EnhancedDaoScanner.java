@@ -24,7 +24,8 @@ public class EnhancedDaoScanner {
         logger.info("register mapper to {}", sqlSessionFactory);
         this.factory = sqlSessionFactory;
         try {
-            String[] paths = new String[] {"com/yoloho/enhanced/data/dao/xml/enhanced-dao-generic.xml", "/com/yoloho/enhanced/data/dao/xml/enhanced-dao-generic.xml"};
+//            String[] paths = new String[] {"com/yoloho/enhanced/data/dao/xml/enhanced-dao-generic.xml", "/com/yoloho/enhanced/data/dao/xml/enhanced-dao-generic.xml"};
+            String[] paths = new String[] {"com/yoloho/enhanced/data/dao/xml/enhanced-dao-generic.xml"};
             InputStream in = null;
             for (int i = 0; i < paths.length; i ++) {
                 in = EnhancedDaoScanner.class.getClassLoader().getResourceAsStream(paths[i]);

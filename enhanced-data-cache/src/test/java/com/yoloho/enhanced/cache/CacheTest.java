@@ -19,7 +19,9 @@ import com.yoloho.enhanced.common.util.Logging;
  * aop.xml(可选), -javaagent, <enhanced-cache:init />, dependency
  * 
  * @author jason<jason@dayima.com> @ Mar 21, 2019
- *
+ * 
+ * 测试用例默认设置 use-aspectj="false"
+ * <p>如果需要使用 aspectj，需要启动时，添加vm args：-javaagent:/.../.m2/repository/org/aspectj/aspectjweaver/1.9.25/aspectjweaver-1.9.25.jar
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:context.xml")

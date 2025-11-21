@@ -35,10 +35,10 @@ public class RedisUtilTest {
     @Test
     public void toObjectTest() {
         assertNull(RedisUtil.toObject(null, Integer.class));
-        assertEquals(new Integer(33), RedisUtil.toObject("33", Integer.class));
-        assertEquals(new Long(33), RedisUtil.toObject("33", Long.class));
-        assertEquals(new Double(33), RedisUtil.toObject("33", Double.class));
-        assertEquals(new Float(33), RedisUtil.toObject("33", Float.class));
+        assertEquals(Integer.valueOf(33), RedisUtil.toObject("33", Integer.class));
+        assertEquals(Long.valueOf(33), RedisUtil.toObject("33", Long.class));
+        assertEquals(Double.valueOf(33), RedisUtil.toObject("33", Double.class));
+        assertEquals(Float.valueOf(33), RedisUtil.toObject("33", Float.class));
         assertEquals("33", RedisUtil.toObject("33", String.class));
         Bean obj = RedisUtil.toObject("{\"id\":23}", Bean.class);
         assertNotNull(obj);
