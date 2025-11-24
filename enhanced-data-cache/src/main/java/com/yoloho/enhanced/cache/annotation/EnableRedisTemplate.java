@@ -16,7 +16,11 @@ import com.yoloho.enhanced.cache.config.EnableRedisTemplateConfiguration;
  * 属性均定义为String是为了支持placeholder
  * 
  * @author jason<jason@dayima.com> @ Mar 15, 2019
- *
+ * 
+ * @author neal
+ * 此处命名修改为匹配
+ * {@link org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration 
+ * RedisAutoConfiguration}中的默认命名，Springboot中，可以不单独启用此注解。
  */
 @Inherited
 @Documented
@@ -33,14 +37,14 @@ public @interface EnableRedisTemplate {
      * 
      * @return
      */
-    String beanName() default "redisTemplate";
+    String beanName() default "stringRedisTemplate";
     
     /**
      * 当同时创建两种类型的Template的时候，byte[]值类型的bean名字
      * 
      * @return
      */
-    String beanNameForByte() default "plainRedisTemplate";
+    String beanNameForByte() default "redisTemplate";
     /**
      * template是否使用StringRedisTemplate(即String, String)<br>
      * 当需要序列化等字节值支持时，会用到，注意暂时这里会独立地创建一个连接池，<br>

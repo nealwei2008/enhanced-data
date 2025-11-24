@@ -34,7 +34,7 @@ public @interface EnableRedisService {
      * 
      * @return
      */
-    String templateBeanName() default "redisTemplate";
+    String templateBeanName() default "stringRedisTemplate";
     
     /**
      * 用于队列，如果要连不同的连接，可指定这个（这个操作不建议使用）
