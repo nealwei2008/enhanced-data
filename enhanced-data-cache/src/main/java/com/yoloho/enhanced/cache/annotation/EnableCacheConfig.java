@@ -39,7 +39,8 @@ public @interface EnableCacheConfig {
      */
     EnableCacheBoolean local() default EnableCacheBoolean.UNSET;
     /**
-     * 过期时间，单位秒，不设置默认为300秒
+     * remote过期时间（也是expireLocal的默认设置，亦可单独设置expireLocal），
+     * 单位秒，设置值小于等于0则无效，默认为300秒.
      * 
      * @return
      */

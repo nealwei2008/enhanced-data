@@ -24,7 +24,7 @@ import com.yoloho.enhanced.data.cache.xml.InitCacheConfiguration;
 @Import(InitCacheConfiguration.class)
 public @interface InitCache {
     String namespace() default "";
-    String redisRef() default "plainRedisTemplate";
+    String redisRef() default "stringRedisTemplate";
     /**
      * Whether to use AspectJ mode. Default to be false. 
      * It works only if to run with vm args: javaagent:aspectjweaver.jar

@@ -44,6 +44,7 @@ use-aspectj | false | default to `false`, whether to use aspectj
     namespace = "demo-namespace"
 )
 ```
+@EnableRedisTemplate can be replaced by Springboot autoconfiguration.
 
 And you can add another annotation to use `RedisService` over `RedisTemplate`:
 

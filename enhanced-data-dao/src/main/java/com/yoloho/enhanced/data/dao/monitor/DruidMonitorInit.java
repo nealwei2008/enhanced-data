@@ -18,8 +18,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 
-import com.alibaba.druid.pool.DruidDataSource;
+import com.alibaba.druid.stat.DataSourceMonitorable;
 import com.alibaba.druid.stat.DruidDataSourceStatManager;
+import com.alibaba.druid.util.DruidDataSourceUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.yoloho.enhanced.data.dao.util.IPUtils;
@@ -65,9 +66,9 @@ public class DruidMonitorInit extends Thread {
     private boolean shutdown = false;
     private int intervalInSeconds = 60;
     
-    private URI getURI(DruidDataSource dataSource) {
+    private URI getURI(DataSourceMonitorable druidDataSource) {
         try {
-            String url = dataSource.getUrl();
+            String url = druidDataSource.getUrl();
             if (url.startsWith("jdbc:")) {
                 url = url.substring(5);
             }
@@ -77,10 +78,11 @@ public class DruidMonitorInit extends Thread {
         }
     }
     
-    private List<MonitorData> getMonitorData(DruidDataSource dataSource) {
+    private List<MonitorData> getMonitorData(DataSourceMonitorable druidDataSource) {
         List<MonitorData> result = Lists.newArrayList();
-        Map<String, Object> stat = dataSource.getStatData();
-        URI uri = getURI(dataSource);
+        Map<String, Object> stat = DruidDataSourceUtils.getStatData(druidDataSource);
+        
+        URI uri = getURI(druidDataSource);
         if (uri == null) return Collections.emptyList();
         for (Entry<String, Object> entry : stat.entrySet()) {
             if (METRICS.contains(entry.getKey())) {
@@ -126,7 +128,7 @@ public class DruidMonitorInit extends Thread {
     
     private void monitor() {
         List<MonitorData> dataList = Lists.newArrayList();
-        for (DruidDataSource druidDataSource : DruidDataSourceStatManager.getDruidDataSourceInstances()) {
+        for (DataSourceMonitorable druidDataSource : DruidDataSourceStatManager.getDruidDataSourceInstances()) {
             dataList.addAll(getMonitorData(druidDataSource));
         }
         if (dataList.size() > 0) {
