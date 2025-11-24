@@ -15,6 +15,7 @@ import org.springframework.context.annotation.DeferredImportSelector;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfigBuilderCustomizer;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -92,6 +93,12 @@ public class EnableRedisTemplateConfiguration implements DeferredImportSelector 
         @Override
         public Duration getReadTimeout() {
             return readTimeout;
+        }
+
+        @Override
+        public Optional<JedisClientConfigBuilderCustomizer> getCustomizer() {
+            // TODO Auto-generated method stub
+            return Optional.empty();
         }
         
     }

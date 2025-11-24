@@ -1,6 +1,5 @@
 package com.yoloho.enhanced.data.cache.redis;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -404,10 +403,7 @@ public class RedisServiceImpl implements RedisService {
                 list.add(Pair.of(item.getValue(), item.getScore()));
             }
         } finally {
-            try {
-                cursor.close();
-            } catch (IOException e) {
-            }
+            cursor.close();
         }
         return list;
     }

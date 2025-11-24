@@ -57,7 +57,7 @@ public class RedisServiceTest {
         assertEquals("ddd", redisService.get(key));
         redisService.set(key, 123);
         assertEquals("123", redisService.get(key));
-        assertEquals(new Integer(123), redisService.get(key, Integer.class));
+        assertEquals(Integer.valueOf(123), redisService.get(key, Integer.class));
         redisService.set(key, false);
         assertEquals("false", redisService.get(key));
         
@@ -105,7 +105,7 @@ public class RedisServiceTest {
         assertEquals("test", redisService.listPop(queue));
         assertEquals(2, redisService.listSize(queue));
         assertEquals("123", redisService.listPop(queue));
-        assertEquals(new Integer(122), redisService.listPop(queue, Integer.class));
+        assertEquals(Integer.valueOf(122), redisService.listPop(queue, Integer.class));
         redisService.listPush(queue, "test");
         redisService.listPush(queue, 123);
         assertEquals(2, redisService.listSize(queue));
@@ -117,7 +117,7 @@ public class RedisServiceTest {
         
         List<Integer> list1 = redisService.listRange(queue, 0, 1, Integer.class);
         assertNull(list1.get(0));
-        assertEquals(new Integer(123), list1.get(1));
+        assertEquals(Integer.valueOf(123), list1.get(1));
         
         redisService.listTrim(queue, 1, -1);
         assertEquals(1, redisService.listSize(queue));
