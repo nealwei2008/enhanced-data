@@ -105,6 +105,10 @@
                         <goals>
                             <goal>sign</goal>
                         </goals>
+                        <configuration>
+                            <!-- 默认跳过gpg -->
+                            <skip>true</skip>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
