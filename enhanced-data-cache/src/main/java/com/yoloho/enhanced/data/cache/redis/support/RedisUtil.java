@@ -3,7 +3,7 @@ package com.yoloho.enhanced.data.cache.redis.support;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson2.JSON;
 
 public class RedisUtil {
     private static final Class<?>[] primativeClass = new Class<?>[] {
