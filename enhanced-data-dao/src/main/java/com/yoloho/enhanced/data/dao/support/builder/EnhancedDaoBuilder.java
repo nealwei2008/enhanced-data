@@ -10,13 +10,25 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import com.yoloho.enhanced.common.util.StringUtil;
 import com.yoloho.enhanced.data.dao.api.Enhanced;
 import com.yoloho.enhanced.data.dao.api.EnhancedType;
+import com.yoloho.enhanced.data.dao.api.dialect.DialectType;
 import com.yoloho.enhanced.data.dao.impl.EnhancedDaoImpl;
+import com.yoloho.enhanced.data.dao.impl.MysqlEnhancedDaoImpl;
+import com.yoloho.enhanced.data.dao.impl.PostgreSqlEnhancedDaoImpl;
 import com.yoloho.enhanced.data.dao.support.EnhancedDaoConstants;
 
 import io.github.lukehutch.fastclasspathscanner.scanner.AnnotationInfo;
 import io.github.lukehutch.fastclasspathscanner.scanner.AnnotationInfo.AnnotationParamValue;
 import io.github.lukehutch.fastclasspathscanner.scanner.ClassInfo;
 
+/**
+ * enhanced-dao 默认 DAO Bean 构建器。
+ * <p>
+ * 该构建器负责根据实体类和扫描配置生成 {@link EnhancedDaoImpl} BeanDefinition。
+ * V1 方言改造后，构建器会把扫描配置中的方言类型注入 DAO Bean，最终由 DAO 在绑定
+ * {@code SqlSessionFactory} 后解析出实际 {@code SqlDialect}。
+ *
+ * @author neal_wei @ Apr 23, 2026
+ */
 public class EnhancedDaoBuilder implements DaoBuilder{
 
 	@Override
@@ -26,7 +38,8 @@ public class EnhancedDaoBuilder implements DaoBuilder{
 
 	@Override
 	public BeanWrapper build(BuildContext buildContext, String sqlFactoryName) {
-        BeanDefinitionBuilder daoBuilder = BeanDefinitionBuilder.genericBeanDefinition(EnhancedDaoImpl.class);
+        BeanDefinitionBuilder daoBuilder = BeanDefinitionBuilder
+                .genericBeanDefinition(resolveBeanClass(buildContext.getConfig().getDialect()));
 
         ClassInfo classInfo = buildContext.getClazzInfo();
         List<AnnotationInfo> listAnno = classInfo.getAnnotationInfo();
@@ -60,11 +73,22 @@ public class EnhancedDaoBuilder implements DaoBuilder{
         daoBuilder.addConstructorArgValue(classInfo.getClassName());
         daoBuilder.addConstructorArgValue(tableName);
         daoBuilder.addConstructorArgReference(sqlFactoryName);
+        daoBuilder.addPropertyValue("dialectType", buildContext.getConfig().getDialect());
         daoBuilder.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_BY_NAME);
         daoBuilder.setRole(BeanDefinition.ROLE_APPLICATION);
         daoBuilder.addDependsOn(buildContext.getScannerBeanName());
 
         return BeanWrapper.instance(beanName, daoBuilder.getBeanDefinition());
 	}
+
+    private Class<?> resolveBeanClass(DialectType dialectType) {
+        if (dialectType == DialectType.MYSQL) {
+            return MysqlEnhancedDaoImpl.class;
+        }
+        if (dialectType == DialectType.POSTGRESQL) {
+            return PostgreSqlEnhancedDaoImpl.class;
+        }
+        return EnhancedDaoImpl.class;
+    }
 	
 }

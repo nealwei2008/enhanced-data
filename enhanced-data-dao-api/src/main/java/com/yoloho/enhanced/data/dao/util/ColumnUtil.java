@@ -11,14 +11,23 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.yoloho.enhanced.common.util.StringUtil;
 import com.yoloho.enhanced.data.dao.api.IgnoreKey;
+import com.yoloho.enhanced.data.dao.api.dialect.SqlDialect;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
 
 /**
- * @author jason
+ * 字段占位符解析工具。
+ * <p>
+ * 该工具负责把表达式中的字段占位符转换成数据库列名，例如把 {@code @displayName@}
+ * 转成实际列名。为了兼容老项目，无方言参数的旧方法仅保留历史反引号行为；
+ * 新执行链路应传入启动期绑定的 {@link SqlDialect}，由方言决定标识符引用方式。
+ * <p>
+ * 该类只处理字段名转换和引用，不负责校验业务表达式是否安全。
  *
+ * @author jason
+ * @author neal_wei @ Apr 23, 2026
  */
 public class ColumnUtil {
     /**
@@ -69,6 +78,23 @@ public class ColumnUtil {
      * @return
      */
     public static String parseColumnNames(String self, String str, Class<?> clz) {
+        return parseColumnNames(self, str, clz, null);
+    }
+
+    /**
+     * 根据给定的类和数据库方言，对字符串中可能存在的列名替换位做替换。
+     *
+     * @param self
+     *      当前的属性名
+     * @param str
+     *      待解析的字符串
+     * @param clz
+     *      所属的类
+     * @param dialect
+     *      SQL 方言
+     * @return
+     */
+    public static String parseColumnNames(String self, String str, Class<?> clz, SqlDialect dialect) {
         if (StringUtils.isEmpty(str) || !str.contains("@")) {
             return str;
         }
@@ -91,7 +117,10 @@ public class ColumnUtil {
             }
             if (fieldsMapping.containsKey(fieldName)) {
                 // found field, replace
-                matcher.appendReplacement(sb, String.format("`%s`", fieldsMapping.get(fieldName)));
+                String columnName = fieldsMapping.get(fieldName);
+                matcher.appendReplacement(sb, dialect == null
+                        ? String.format("`%s`", columnName)
+                        : dialect.quoteIdentifier(columnName));
             }
         }
         matcher.appendTail(sb);

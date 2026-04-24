@@ -4,8 +4,16 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.yoloho.enhanced.data.dao.api.IgnoreKey;
+import com.yoloho.enhanced.data.dao.api.dialect.Dialects;
 import com.yoloho.enhanced.data.dao.util.ColumnUtil;
 
+/**
+ * 字段占位符解析测试。
+ * <p>
+ * 覆盖历史 MySQL 反引号兼容行为，以及显式传入 PostgreSQL 方言后的标识符引用行为。
+ *
+ * @author neal_wei @ Apr 23, 2026
+ */
 public class ColumnUtilTest {
     @SuppressWarnings("unused")
     private static class Demo {
@@ -53,6 +61,15 @@ public class ColumnUtilTest {
         Assert.assertEquals("round(`id`)", ColumnUtil.parseColumnNames("displayName", str, Demo.class));
         str = "@tmpName@ + 1";
         Assert.assertEquals("@tmpName@ + 1", ColumnUtil.parseColumnNames(null, str, Demo.class));
+    }
+
+    @Test
+    public void parseColumnNamesWithDialectTest() {
+        String str = "@__self__@ + @id@";
+        Assert.assertEquals("\"display_name\" + \"id\"",
+                ColumnUtil.parseColumnNames("displayName", str, Demo.class, Dialects.postgresql()));
+        Assert.assertEquals("`display_name` + `id`",
+                ColumnUtil.parseColumnNames("displayName", str, Demo.class, Dialects.mysql()));
     }
 
 }

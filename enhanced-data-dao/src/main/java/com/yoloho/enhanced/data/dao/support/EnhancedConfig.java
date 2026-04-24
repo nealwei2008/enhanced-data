@@ -11,18 +11,29 @@ import org.w3c.dom.Element;
 
 import com.yoloho.enhanced.common.util.JoinerSplitters;
 import com.yoloho.enhanced.data.dao.annotations.EnableEnhancedDao;
+import com.yoloho.enhanced.data.dao.api.dialect.DialectType;
 
+/**
+ * enhanced-dao 扫描配置对象。
+ * <p>
+ * 该对象承接 XML 和注解两种配置入口，供 DAO 扫描器和 Bean 构建器使用。
+ * V1 方言改造后，配置中包含 {@link DialectType}，用于在 DAO Bean 初始化时绑定具体 SQL 方言。
+ *
+ * @author neal_wei @ Apr 23, 2026
+ */
 public class EnhancedConfig {
     final static private String ATTR_POSTFIX = "postfix";
     final static private String ATTR_SCAN = "scan-path";
     final static private String ATTR_SQL_SESSION_FACTORY = "sql-session-factory";
     final static private String ATTR_MAPPER_LOCATIONS = "mapper-locations";
+    final static private String ATTR_DIALECT = "dialect";
     
     private List<String> scanPath = Collections.emptyList();
     private String sqlSessionFactory = "sqlSessionFactory";
     private String prefix = "";
     private String postfix = "EnhancedDao";
     private String mapperLocations = null;
+    private DialectType dialect = DialectType.AUTO;
     
     public EnhancedConfig() {
     }
@@ -53,6 +64,12 @@ public class EnhancedConfig {
             String locations = element.getAttribute(ATTR_MAPPER_LOCATIONS);
             if (StringUtils.isNotEmpty(locations)) {
                 this.mapperLocations = locations;
+            }
+        }
+        {
+            String dialect = element.getAttribute(ATTR_DIALECT);
+            if (StringUtils.isNotEmpty(dialect)) {
+                this.dialect = DialectType.valueOf(dialect.toUpperCase());
             }
         }
     }
@@ -92,6 +109,12 @@ public class EnhancedConfig {
                 this.mapperLocations = JoinerSplitters.getJoiner(",").join(locations);
             }
         }
+        {
+            DialectType dialect = (DialectType)map.get("dialect");
+            if (dialect != null) {
+                this.dialect = dialect;
+            }
+        }
     }
 
     public List<String> getScanPath() {
@@ -128,5 +151,13 @@ public class EnhancedConfig {
     
     public String getMapperLocations() {
         return mapperLocations;
+    }
+
+    public DialectType getDialect() {
+        return dialect;
+    }
+
+    public void setDialect(DialectType dialect) {
+        this.dialect = dialect == null ? DialectType.AUTO : dialect;
     }
 }

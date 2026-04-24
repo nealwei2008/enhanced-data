@@ -15,6 +15,7 @@ import com.google.common.base.Preconditions;
 import com.yoloho.enhanced.common.util.StringUtil;
 import com.yoloho.enhanced.data.dao.api.ExprEntry;
 import com.yoloho.enhanced.data.dao.api.ParamUtil;
+import com.yoloho.enhanced.data.dao.api.dialect.SqlDialect;
 import com.yoloho.enhanced.data.dao.api.filter.FieldCommand.Operator;
 import com.yoloho.enhanced.data.dao.api.filter.FieldCommand.Type;
 import com.yoloho.enhanced.data.dao.util.ColumnUtil;
@@ -28,6 +29,8 @@ import com.yoloho.enhanced.data.dao.util.ColumnUtil;
 public class DynamicQueryFilter implements java.io.Serializable {
 	private static final long serialVersionUID = 8790528179232633456L;
 	public static final Logger logger = LoggerFactory.getLogger(DynamicQueryFilter.class);
+    public static final String KEY_FILTER_SOURCE = "__EnhancedDynamicQueryFilter__";
+    public static final String KEY_APPEND_SQL = "__EnhancedDynamicQueryAppendSql__";
 
 	private int offset = 0;
 	private int limit = 20;
@@ -294,7 +297,7 @@ public class DynamicQueryFilter implements java.io.Serializable {
 	 * @param parameterMap
 	 * @return
 	 */
-	private String getPartSql(FieldCommand cmd, Map<String, Object> parameterMap) {
+	private String getPartSql(FieldCommand cmd, Map<String, Object> parameterMap, SqlDialect dialect) {
 		String property = cmd.getProperty();
 		Operator operation = cmd.getOperation();
 		Object value = cmd.getValue();
@@ -338,14 +341,14 @@ public class DynamicQueryFilter implements java.io.Serializable {
 		    String name = null;
 		    if (property.contains("@")) {
 		        //特殊处理方式
-                name = ColumnUtil.parseColumnNames(null, property, expr.getClz());
+                name = ColumnUtil.parseColumnNames(null, property, expr.getClz(), dialect);
             }
 		    if (name == null) {
 		        //普通处理方式
     		    name = fieldName;
 		    }
             return String.format("%s%s%s", name, op,
-                    ColumnUtil.parseColumnNames(property, expr.getValue(), expr.getClz()));
+                    ColumnUtil.parseColumnNames(property, expr.getValue(), expr.getClz(), dialect));
 		}
 		String fieldKeyReplace = String.format("#{%s}", fieldKey);
 		switch (operation) {
@@ -384,7 +387,11 @@ public class DynamicQueryFilter implements java.io.Serializable {
                 partHql = (new StringBuilder(String.valueOf(fieldName))).append(" is not null ").toString();
                 break;
             case inJoinString:
-                partHql = String.format("concat(',', `%s`, ',') like %s", fieldName, fieldKeyReplace);
+                if (dialect == null) {
+                    partHql = String.format("concat(',', `%s`, ',') like %s", fieldName, fieldKeyReplace);
+                } else {
+                    partHql = dialect.renderJoinedStringContains(fieldName, fieldKeyReplace);
+                }
                 parameterMap.put(fieldKey, "%," + value + ",%");
                 break;
             case in:
@@ -413,11 +420,19 @@ public class DynamicQueryFilter implements java.io.Serializable {
                 parameterMap.put(fieldKey, value);
                 break;
             case lessOrEqualTimestamp:
-                partHql = fieldName + " <= FROM_UNIXTIME(" + fieldKeyReplace+")";
+                if (dialect == null) {
+                    partHql = fieldName + " <= FROM_UNIXTIME(" + fieldKeyReplace + ")";
+                } else {
+                    partHql = dialect.renderTimestampCompare(fieldName, "<=", fieldKeyReplace);
+                }
                 parameterMap.put(fieldKey, value);
                 break;
             case greatOrEqualTimestamp:
-                partHql = fieldName + " >= FROM_UNIXTIME(" + fieldKeyReplace+")";
+                if (dialect == null) {
+                    partHql = fieldName + " >= FROM_UNIXTIME(" + fieldKeyReplace + ")";
+                } else {
+                    partHql = dialect.renderTimestampCompare(fieldName, ">=", fieldKeyReplace);
+                }
                 parameterMap.put(fieldKey, value);
                 break;
 
@@ -428,6 +443,10 @@ public class DynamicQueryFilter implements java.io.Serializable {
 	}
 
     public QueryData getQueryData() {
+        return getQueryData((SqlDialect) null);
+    }
+
+    public QueryData getQueryData(SqlDialect dialect) {
         QueryData map = new QueryData();
         QueryCommand cmd = null;
         StringBuilder where = new StringBuilder();
@@ -442,7 +461,7 @@ public class DynamicQueryFilter implements java.io.Serializable {
                         where.append(" or ");
                     }
                 }
-                where.append(getPartSql((FieldCommand) cmd, map));
+                where.append(getPartSql((FieldCommand) cmd, map, dialect));
             } else if (cmd instanceof SortCommandImpl) {
                 if (orderBy.length() > 0) {
                     orderBy.append(", ");
@@ -463,7 +482,7 @@ public class DynamicQueryFilter implements java.io.Serializable {
                 }
             }
             where.append("(");
-            Map<String, Object> params = sub.getParameters();
+            Map<String, Object> params = sub.getQueryData(dialect);
             for (Entry<String, Object> entry : params.entrySet()) {
                 if (entry.getKey().equals("SortSQL")) {
                     //do nothing
@@ -485,16 +504,22 @@ public class DynamicQueryFilter implements java.io.Serializable {
         map.put("WhereSQL", where.toString());
         map.put("SortSQL", orderBy.length() > 0 ? orderBy.toString() : null);
         map.setLimit(offset, limit);
+        map.put(KEY_FILTER_SOURCE, this);
         return map;
     }
 
     public QueryData getQueryData(String sql) {
-        QueryData map = getQueryData();
+        return getQueryData(sql, null);
+    }
+
+    public QueryData getQueryData(String sql, SqlDialect dialect) {
+        QueryData map = getQueryData(dialect);
         if(StringUtils.isNotEmpty(sql)){
             StringBuilder builder = new StringBuilder(map.get("WhereSQL").toString());
             builder.append(" ").append(sql);
             map.put("SearchAll", false);
             map.put("WhereSQL", builder.toString());
+            map.put(KEY_APPEND_SQL, sql);
         }
         return map;
     }

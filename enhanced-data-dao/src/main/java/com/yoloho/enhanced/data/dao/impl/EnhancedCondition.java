@@ -25,6 +25,18 @@ public class EnhancedCondition extends QueryData {
         put("genericTableName", genericTableName);
         //}
     }
+
+    public void setPagingSql(String pagingSql) {
+        put("PagingSQL", pagingSql);
+    }
+
+    public void setUpdateLimitSql(String updateLimitSql) {
+        put("UpdateLimitSQL", updateLimitSql);
+    }
+
+    public void setDeleteLimitSql(String deleteLimitSql) {
+        put("DeleteLimitSQL", deleteLimitSql);
+    }
     
     public EnhancedCondition(EnhancedCondition condition) {
         putAll(condition);
