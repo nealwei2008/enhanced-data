@@ -13,10 +13,20 @@ public final class Dialects {
     private Dialects() {
     }
 
+    /**
+     * 获取内置 MySQL 方言实例。
+     *
+     * @return MySQL 方言
+     */
     public static SqlDialect mysql() {
         return MysqlDialect.INSTANCE;
     }
 
+    /**
+     * 获取内置 PostgreSQL 方言实例。
+     *
+     * @return PostgreSQL 方言
+     */
     public static SqlDialect postgresql() {
         return PostgreSqlDialect.INSTANCE;
     }

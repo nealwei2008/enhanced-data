@@ -10,6 +10,7 @@
 		http://www.springframework.org/schema/aop         http://www.springframework.org/schema/aop/spring-aop.xsd
 		http://www.dayima.org/schema/enhanced-cache       http://www.dayima.org/schema/enhanced-cache/enhanced-cache.xsd
 	" default-autowire="byName">
+	<context:property-placeholder />
 	<enhanced-cache:init namespace="test1" redis-ref="redisTemplate" use-aspectj="false" />
 	<context:component-scan base-package="com.yoloho.enhanced.cache" />
 	<bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
@@ -19,9 +20,9 @@
     </bean>
     <bean id="redisConnectionFactory"
           class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
-        <property name="hostName" value="192.168.110.240"/>
-        <property name="port" value="6379"/>
-        <property name="password" value="87vhqEneQ5u8"/>
+        <property name="hostName" value="${redis.test.host:192.168.110.240}"/>
+        <property name="port" value="${redis.test.port:6379}"/>
+        <property name="password" value="${redis.test.password:87vhqEneQ5u8}"/>
         <property name="poolConfig" ref="poolConfig"/>
     </bean>
     <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate">

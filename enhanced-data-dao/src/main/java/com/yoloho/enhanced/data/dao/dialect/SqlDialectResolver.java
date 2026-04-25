@@ -38,6 +38,15 @@ public final class SqlDialectResolver {
     private SqlDialectResolver() {
     }
 
+    /**
+     * 按配置和绑定的数据源解析 SQL 方言。
+     *
+     * @param configuredType
+     *      DAO 扫描配置中的方言类型，通常来自注解或 XML；{@code null} 等价于 AUTO
+     * @param sqlSessionFactory
+     *      DAO 绑定的 SqlSessionFactory，用于读取 DataSource/JDBC URL
+     * @return 解析后的 SQL 方言
+     */
     public static SqlDialect resolve(DialectType configuredType, SqlSessionFactory sqlSessionFactory) {
         if (configuredType == DialectType.MYSQL) {
             logger.info("enhanced-dao selected SQL dialect by explicit annotation config: mysql");
@@ -117,7 +126,7 @@ public final class SqlDialectResolver {
         }
     }
 
-    private static DialectType detectByJdbcUrl(String url) {
+    static DialectType detectByJdbcUrl(String url) {
         if (url == null) {
             return null;
         }

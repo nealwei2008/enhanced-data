@@ -8,8 +8,11 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.annotation.DeferredImportSelector;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.util.StringUtils;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.yoloho.enhanced.data.dao.annotations.EnableSqlSessionFactory;
@@ -19,16 +22,22 @@ import com.yoloho.enhanced.data.dao.annotations.EnableSqlSessionFactory;
  *
  */
 public class EnableSqlSessionFactoryConfiguration implements DeferredImportSelector {
-    public static class EnhancedConfiguration implements ImportBeanDefinitionRegistrar {
+    public static class EnhancedConfiguration implements ImportBeanDefinitionRegistrar, EnvironmentAware {
+        private Environment environment;
+
+        @Override
+        public void setEnvironment(Environment environment) {
+            this.environment = environment;
+        }
 
         @Override
         public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata,
                 BeanDefinitionRegistry registry) {
             Map<String, Object> map = importingClassMetadata.getAnnotationAttributes(EnableSqlSessionFactory.class.getName());
             String name = (String)map.get("name");
-            String connectionUrl = (String)map.get("connectionUrl");
-            String username = (String)map.get("username");
-            String password = (String)map.get("password");
+            String connectionUrl = resolve((String)map.get("connectionUrl"));
+            String username = resolve((String)map.get("username"));
+            String password = resolve((String)map.get("password"));
             String initialSize = (String)map.get("initialSize");
             String minIdle = (String)map.get("minIdle");
             String maxActive = (String)map.get("maxActive");
@@ -54,7 +63,9 @@ public class EnableSqlSessionFactoryConfiguration implements DeferredImportSelec
                 builder.addPropertyValue("keepAlive", true);
                 builder.addPropertyValue("poolPreparedStatements", false);
                 builder.addPropertyValue("filters", "stat");
-                builder.addPropertyValue("connectionInitSqls", Arrays.asList("set names " + charset));
+                if (StringUtils.hasText(charset)) {
+                    builder.addPropertyValue("connectionInitSqls", Arrays.asList("set names " + charset));
+                }
                 
                 builder.setInitMethodName("init");
                 builder.setDestroyMethodName("close");
@@ -74,6 +85,13 @@ public class EnableSqlSessionFactoryConfiguration implements DeferredImportSelec
                 builder.addConstructorArgReference(name + "DataSource");
                 registry.registerBeanDefinition(name + "TransactionManager", builder.getBeanDefinition());
             }
+        }
+
+        private String resolve(String value) {
+            if (environment == null) {
+                return value;
+            }
+            return environment.resolvePlaceholders(value);
         }
     }
     

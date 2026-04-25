@@ -16,9 +16,9 @@
 
 		<!-- 基本属性 url、user、password -->
 		<property name="url"
-			value="jdbc:mysql://192.168.127.56:3306/test?useUnicode=true&amp;characterEncoding=utf-8&amp;allowMultiQueries=true" />
-		<property name="username" value="test" />
-		<property name="password" value="test" />
+			value="${dao.test.jdbc.url:jdbc:mysql://192.168.127.56:3306/test?useUnicode=true&amp;characterEncoding=utf-8&amp;allowMultiQueries=true}" />
+		<property name="username" value="${dao.test.jdbc.username:test}" />
+		<property name="password" value="${dao.test.jdbc.password:test}" />
 
 		<!-- 配置初始化大小、最小、最大 -->
 		<property name="initialSize" value="3" />

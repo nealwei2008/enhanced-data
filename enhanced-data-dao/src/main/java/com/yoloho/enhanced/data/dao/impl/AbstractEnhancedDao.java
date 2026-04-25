@@ -52,6 +52,7 @@ import com.yoloho.enhanced.data.dao.util.ColumnUtil;
 public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends SqlSessionDaoSupport
         implements EnhancedDao<T, PK> {
     public static final Logger logger = LoggerFactory.getLogger(AbstractEnhancedDao.class);
+    private static final String KEY_PRIMARY_QUERY = "__EnhancedPrimaryQuery__";
     private static final class Column {
         private String columnName;
         private String quotedColumnName;
@@ -203,6 +204,8 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
         } else {
             this.tableName = StringUtil.toUnderline(cls.getSimpleName());
         }
+        this.fieldsMapping.clear();
+        this.primaryKeys.clear();
         //fields
         List<Field> fields = Lists.newArrayList();
         Set<String> fieldNameSet = Sets.newHashSet();
@@ -294,8 +297,30 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
      */
     public void setFieldMapping(String name, String column_name) {
         if (this.fieldsMapping.containsKey(name)) {
-            this.fieldsMapping.get(name).setColumnName(column_name);
+            Column column = this.fieldsMapping.get(name);
+            column.setColumnName(column_name);
+            column.setQuotedColumnName(dialect == null ? "`" + column_name + "`" : dialect.quoteIdentifier(column_name));
+            rebuildFieldsGenerated();
         }
+    }
+
+    private void rebuildFieldsGenerated() {
+        StringBuffer buffer = new StringBuffer();
+        for (Entry<String, Column> entry : this.fieldsMapping.entrySet()) {
+            Column column = entry.getValue();
+            if (buffer.length() > 0) {
+                buffer.append(",");
+            }
+            buffer.append(column.getQuotedColumnName());
+            if (!column.getPropertyName().equals(column.getColumnName())) {
+                if (dialect == null) {
+                    buffer.append(" as `").append(column.getPropertyName()).append('`');
+                } else {
+                    buffer.append(" as ").append(dialect.quoteIdentifier(column.getPropertyName()));
+                }
+            }
+        }
+        fieldsGenerated = buffer.toString();
     }
     
     /**
@@ -369,23 +394,33 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
     }
     
     private int insert(List<T> beanList, boolean ignore, boolean replace) {
+        return insert(beanList, ignore, replace, "");
+    }
+
+    /**
+     * 通用插入执行入口。
+     *
+     * @param beanList
+     *      待写入对象集合
+     * @param ignore
+     *      MySQL insert ignore 兼容开关
+     * @param replace
+     *      MySQL replace into 兼容开关
+     * @param insertSuffixSql
+     *      方言特定 insert 后缀
+     * @return 受影响行数
+     */
+    protected int insert(List<T> beanList, boolean ignore, boolean replace, String insertSuffixSql) {
         int count = 0;
-        List<String> insertProperyNameList = Lists.newArrayList();
-        for (Entry<String, Column> entry : fieldsMapping.entrySet()) {
-            insertProperyNameList.add(entry.getKey());
-        }
-        EnhancedCondition dataBase = new EnhancedCondition("", tableName);
+        List<String> insertProperyNameList = getInsertPropertyNameList();
+        EnhancedCondition dataBase = new EnhancedCondition("", getDialect().quoteIdentifier(tableName));
         dataBase.put(KEY_PROPERTY_LIST, insertProperyNameList);
         dataBase.put(KEY_COLUMNS, fieldsMapping);
-        if (replace) {
-            dataBase.put(KEY_INSERT, "replace into");
-        } else {
-            if (ignore) {
-                dataBase.put(KEY_INSERT, "insert ignore");
-            } else {
-                dataBase.put(KEY_INSERT, "insert");
-            }
+        if (hasAutoIncrementKey()) {
+            dataBase.put(KEY_AUTO_INCREMENT, 0L);
         }
+        dataBase.setInsertSuffixSql(insertSuffixSql);
+        dataBase.put(KEY_INSERT, getInsertOperation(ignore, replace));
         if (beanList.size() == 1) {
             // 单条不开启batch
             T bean = beanList.get(0);
@@ -498,7 +533,7 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
     }
         
     private List<T> insertAndReturn(List<T> beanList, boolean ignore, boolean replace) {
-        return _insertAndReturn(beanList, ignore, replace);
+        return _insertAndReturn(beanList, ignore, replace, "");
     }
     
     private void setAutoincreKeyForList(List<T> beanList, BatchResult batchResult, int offset) {
@@ -520,23 +555,37 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
     }
     
     private List<T> _insertAndReturn(List<T> beanList, boolean ignore, boolean replace) {
+        return _insertAndReturn(beanList, ignore, replace, "");
+    }
+
+    /**
+     * 通用插入并回填自增主键入口。
+     *
+     * @param beanList
+     *      待写入对象集合
+     * @param ignore
+     *      MySQL insert ignore 兼容开关
+     * @param replace
+     *      MySQL replace into 兼容开关
+     * @param insertSuffixSql
+     *      方言特定 insert 后缀
+     * @return 写入对象集合
+     */
+    protected List<T> insertAndReturn(List<T> beanList, boolean ignore, boolean replace, String insertSuffixSql) {
+        return _insertAndReturn(beanList, ignore, replace, insertSuffixSql);
+    }
+
+    private List<T> _insertAndReturn(List<T> beanList, boolean ignore, boolean replace, String insertSuffixSql) {
         try {
-            List<String> insertProperyNameList = Lists.newArrayList();
-            for (Entry<String, Column> entry : fieldsMapping.entrySet()) {
-                insertProperyNameList.add(entry.getKey());
-            }
-            EnhancedCondition dataBase = new EnhancedCondition("", this.tableName);
+            List<String> insertProperyNameList = getInsertPropertyNameList();
+            EnhancedCondition dataBase = new EnhancedCondition("", getDialect().quoteIdentifier(this.tableName));
             dataBase.put(KEY_PROPERTY_LIST, insertProperyNameList);
             dataBase.put(KEY_COLUMNS, fieldsMapping);
-            if (replace) {
-                dataBase.put(KEY_INSERT, "replace into");
-            } else {
-                if (ignore) {
-                    dataBase.put(KEY_INSERT, "insert ignore");
-                } else {
-                    dataBase.put(KEY_INSERT, "insert");
-                }
+            if (hasAutoIncrementKey()) {
+                dataBase.put(KEY_AUTO_INCREMENT, 0L);
             }
+            dataBase.setInsertSuffixSql(insertSuffixSql);
+            dataBase.put(KEY_INSERT, getInsertOperation(ignore, replace));
             if (beanList.size() == 1) {
                 //单条不开启batch
                 T bean = beanList.get(0);
@@ -621,6 +670,109 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
         return insertAndReturn(beanList, false, true);
     }
 
+    /**
+     * 构造 PostgreSQL {@code on conflict (...) do nothing} 后缀。
+     *
+     * @param conflictColumns
+     *      冲突目标属性名
+     * @return insert suffix SQL
+     */
+    protected String buildOnConflictDoNothingSuffix(String... conflictColumns) {
+        if (conflictColumns == null || conflictColumns.length == 0) {
+            throw new IllegalArgumentException("conflictColumns must not be empty");
+        }
+        StringBuilder builder = new StringBuilder(" on conflict (");
+        for (int i = 0; i < conflictColumns.length; i++) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(quoteColumnByProperty(conflictColumns[i]));
+        }
+        builder.append(") do nothing");
+        return builder.toString();
+    }
+
+    /**
+     * 使用附加 insert suffix 执行插入。
+     *
+     * @param beanList
+     *      待写入对象集合
+     * @param insertSuffixSql
+     *      方言特定 insert 后缀
+     * @return 受影响行数
+     */
+    protected int insertWithSuffix(List<T> beanList, String insertSuffixSql) {
+        return insert(beanList, false, false, insertSuffixSql);
+    }
+
+    /**
+     * 使用附加 insert suffix 执行插入并返回对象。
+     *
+     * @param beanList
+     *      待写入对象集合
+     * @param insertSuffixSql
+     *      方言特定 insert 后缀
+     * @return 写入对象集合
+     */
+    protected List<T> insertAndReturnWithSuffix(List<T> beanList, String insertSuffixSql) {
+        return insertAndReturn(beanList, false, false, insertSuffixSql);
+    }
+
+    private List<String> getInsertPropertyNameList() {
+        List<String> insertProperyNameList = Lists.newArrayList();
+        for (Entry<String, Column> entry : fieldsMapping.entrySet()) {
+            if (entry.getValue().isAutoIncrement()) {
+                continue;
+            }
+            insertProperyNameList.add(entry.getKey());
+        }
+        return insertProperyNameList;
+    }
+
+    private boolean hasAutoIncrementKey() {
+        for (Column column : fieldsMapping.values()) {
+            if (column.isAutoIncrement()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 按实体属性名查找并引用列名。
+     *
+     * @param propertyName
+     *      实体属性名
+     * @return 按当前方言引用后的列名
+     */
+    protected String quoteColumnByProperty(String propertyName) {
+        if (fieldsMapping.containsKey(propertyName)) {
+            return fieldsMapping.get(propertyName).getQuotedColumnName();
+        }
+        return getDialect().quoteIdentifier(StringUtil.toUnderline(propertyName));
+    }
+
+    /**
+     * 获取 insert 操作关键字。
+     * <p>
+     * MySQL 保留 {@code insert ignore}/{@code replace into} 兼容行为；其他方言可覆盖该方法。
+     *
+     * @param ignore
+     *      是否使用 insert ignore
+     * @param replace
+     *      是否使用 replace into
+     * @return insert 操作关键字
+     */
+    protected String getInsertOperation(boolean ignore, boolean replace) {
+        if (replace) {
+            return "replace into";
+        }
+        if (ignore) {
+            return "insert ignore";
+        }
+        return "insert";
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public int remove(PK... keys) {
@@ -646,7 +798,9 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
             }
         }
         filter.limit(1);
-        return renderQueryData(filter);
+        QueryData queryData = renderQueryData(filter);
+        queryData.put(KEY_PRIMARY_QUERY, Boolean.TRUE);
+        return queryData;
     }
     
     private QueryData getPrimaryQueryData(List<PK> keyList) {
@@ -676,7 +830,9 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
             }
         }
         filter.limit(keyList.size());
-        return renderQueryData(filter);
+        QueryData queryData = renderQueryData(filter);
+        queryData.put(KEY_PRIMARY_QUERY, Boolean.TRUE);
+        return queryData;
     }
     
     @Override
@@ -686,8 +842,13 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
             if (queryData.getLimit() > 1000) {
                 queryData.setLimit(1000);
             }
-            EnhancedCondition condition = buildCondition("", queryData);
+            QueryData resolvedQueryData = resolveQueryData(queryData);
+            rejectUpdateDeleteLimit(resolvedQueryData);
+            EnhancedCondition condition = buildCondition("", resolvedQueryData);
             return getSqlSession().delete(NAMESPACE_DELETE, condition);
+        } catch (RuntimeException e) {
+            logger.error("batchRemove异常", e);
+            throw e;
         } catch (Exception e) {
             logger.error("batchRemove异常", e);
             throw new RuntimeException("操作失败");
@@ -759,7 +920,8 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
             if (fieldsMapping.containsKey(fieldName)) {
                 columnName = fieldsMapping.get(fieldName).getColumnName();
             }
-            EnhancedCondition condition = buildCondition(String.format("sum(%s) as sum", columnName), queryData);
+            EnhancedCondition condition = buildCondition(String.format("sum(%s) as sum",
+                    getDialect().quoteIdentifier(columnName)), queryData);
             Map<String, Object> map = getSqlSession().<Map<String, Object>>selectOne(NAMESPACE_GET, condition);
             if (map != null) {
                 return NumberUtils.toInt(map.get("sum").toString(), 0);
@@ -940,14 +1102,17 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
             UpdateEntry updateEntry = entry.getValue();
             if (updateEntry.isPlain()) {
                 // 裸值更新
-                updateEntry.setValue(ColumnUtil.parseColumnNames(entry.getKey(), updateEntry.getValue(), beanClass));
+                updateEntry.setValue(ColumnUtil.parseColumnNames(entry.getKey(), updateEntry.getValue(), beanClass,
+                        getDialect()));
             }
         }
         if (properyNameList.size() == 0) {
             //没有待更新的键
             return 0;
         }
-        EnhancedCondition dataBase = buildCondition("", queryData);
+        QueryData resolvedQueryData = resolveQueryData(queryData);
+        rejectUpdateDeleteLimit(resolvedQueryData);
+        EnhancedCondition dataBase = buildCondition("", resolvedQueryData);
         dataBase.put(KEY_PROPERTY_LIST, properyNameList);
         dataBase.put(KEY_COLUMNS, fieldsMapping);
         dataBase.put(KEY_DATA, data);
@@ -1006,6 +1171,20 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
             condition.setDeleteLimitSql("");
         }
         return condition;
+    }
+
+    private void rejectUpdateDeleteLimit(QueryData queryData) {
+        if (queryData == null || queryData.getLimit() <= 0 || getDialect().supportsUpdateDeleteLimit()
+                || Boolean.TRUE.equals(queryData.get(KEY_PRIMARY_QUERY))) {
+            return;
+        }
+        Object filterSource = queryData.get(DynamicQueryFilter.KEY_FILTER_SOURCE);
+        boolean explicitLimit = !(filterSource instanceof DynamicQueryFilter)
+                || Boolean.TRUE.equals(queryData.get(DynamicQueryFilter.KEY_LIMIT_EXPLICIT));
+        if (explicitLimit) {
+            throw new UnsupportedOperationException(getDialect().name()
+                    + " does not use MySQL style update/delete limit in enhanced-dao");
+        }
     }
     
     @Override

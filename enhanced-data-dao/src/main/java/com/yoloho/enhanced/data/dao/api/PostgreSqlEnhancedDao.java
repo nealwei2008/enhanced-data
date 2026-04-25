@@ -17,13 +17,49 @@ import com.yoloho.enhanced.common.annotation.NonNull;
  * @param <PK>
  */
 public interface PostgreSqlEnhancedDao<T, PK extends Serializable> extends EnhancedDao<T, PK> {
+    /**
+     * PostgreSQL {@code insert ... on conflict (...) do nothing} 写入。
+     *
+     * @param bean
+     *      待写入对象
+     * @param conflictColumns
+     *      冲突目标属性名，按实体属性名填写
+     * @return 受影响行数
+     */
     int insertOnConflictDoNothing(@NonNull T bean, @NonNull String... conflictColumns);
 
+    /**
+     * PostgreSQL 批量 {@code insert ... on conflict (...) do nothing} 写入。
+     *
+     * @param beanList
+     *      待写入对象集合
+     * @param conflictColumns
+     *      冲突目标属性名，按实体属性名填写
+     * @return 受影响行数
+     */
     int insertOnConflictDoNothing(@NonNull List<T> beanList, @NonNull String... conflictColumns);
 
+    /**
+     * PostgreSQL {@code insert ... on conflict (...) do nothing} 写入，并返回填充自增主键后的对象。
+     *
+     * @param bean
+     *      待写入对象
+     * @param conflictColumns
+     *      冲突目标属性名，按实体属性名填写
+     * @return 写入对象
+     */
     @NonNull
     T insertOnConflictDoNothingAndReturn(@NonNull T bean, @NonNull String... conflictColumns);
 
+    /**
+     * PostgreSQL 批量 {@code insert ... on conflict (...) do nothing} 写入，并返回填充自增主键后的对象集合。
+     *
+     * @param beanList
+     *      待写入对象集合
+     * @param conflictColumns
+     *      冲突目标属性名，按实体属性名填写
+     * @return 写入对象集合
+     */
     @NonNull
     List<T> insertOnConflictDoNothingAndReturn(@NonNull List<T> beanList, @NonNull String... conflictColumns);
 }

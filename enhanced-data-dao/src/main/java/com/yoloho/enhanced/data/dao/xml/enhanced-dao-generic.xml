@@ -7,7 +7,7 @@
 		${insertOperation} ${genericTableName} <foreach collection="properyNameList" index="index" item="item" open="("
 			separator="," close=")"><if test="data[item] != null">${columns.get(item).quotedColumnName}</if></foreach> values
 		<foreach collection="properyNameList" index="i" item="item" open="("
-				separator="," close=")"><if test="data[item] != null">#{data.${item}}</if></foreach>
+				separator="," close=")"><if test="data[item] != null">#{data.${item}}</if></foreach>${InsertSuffixSQL}
 	</insert>
 	<!-- delete增加map方法，但要控制安全性，初步考虑使用limit -->
 	<delete id="delete" parameterType="hashmap">

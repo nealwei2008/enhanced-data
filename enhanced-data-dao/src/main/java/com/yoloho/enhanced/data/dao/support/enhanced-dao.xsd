@@ -54,6 +54,17 @@
                     <xsd:restriction base="xsd:string" />
                 </xsd:simpleType>
             </xsd:attribute>
+            <xsd:attribute name="dialect" default="AUTO">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+                    SQL dialect for generated DAO beans. Values: AUTO, MYSQL, POSTGRESQL.
+                    AUTO detects by explicit datasource/JDBC driver integration.
+                    ]]></xsd:documentation>
+                </xsd:annotation>
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string" />
+                </xsd:simpleType>
+            </xsd:attribute>
 		</xsd:complexType>
 	</xsd:element>
     <xsd:element name="druid-monitor">

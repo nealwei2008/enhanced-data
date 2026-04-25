@@ -68,13 +68,41 @@ public interface MysqlEnhancedDao<T, PK extends Serializable> extends EnhancedDa
     @Deprecated
     List<T> insertAndReturn(@NonNull List<T> beanList, boolean ignore);
 
+    /**
+     * MySQL {@code insert ignore}。
+     *
+     * @param bean
+     *      待写入对象
+     * @return 受影响行数
+     */
     int insertIgnore(@NonNull T bean);
 
+    /**
+     * 批量 MySQL {@code insert ignore}。
+     *
+     * @param beanList
+     *      待写入对象集合
+     * @return 受影响行数
+     */
     int insertIgnore(@NonNull List<T> beanList);
 
+    /**
+     * MySQL {@code insert ignore} 并返回写入后的对象。
+     *
+     * @param bean
+     *      待写入对象
+     * @return 写入对象
+     */
     @NonNull
     T insertIgnoreAndReturn(@NonNull T bean);
 
+    /**
+     * 批量 MySQL {@code insert ignore} 并返回写入后的对象集合。
+     *
+     * @param beanList
+     *      待写入对象集合
+     * @return 写入对象集合
+     */
     @NonNull
     List<T> insertIgnoreAndReturn(@NonNull List<T> beanList);
 
@@ -94,9 +122,23 @@ public interface MysqlEnhancedDao<T, PK extends Serializable> extends EnhancedDa
      */
     int replace(@NonNull List<T> beanList);
 
+    /**
+     * MySQL {@code replace into} 并返回写入后的对象。
+     *
+     * @param bean
+     *      待写入对象
+     * @return 写入对象
+     */
     @NonNull
     T replaceAndReturn(@NonNull T bean);
 
+    /**
+     * 批量 MySQL {@code replace into} 并返回写入后的对象集合。
+     *
+     * @param beanList
+     *      待写入对象集合
+     * @return 写入对象集合
+     */
     @NonNull
     List<T> replaceAndReturn(@NonNull List<T> beanList);
 }

@@ -67,7 +67,10 @@ public class ColumnUtil {
             });
     
     /**
-     * 根据给定的类对字符串中可能存在的替换位做替换
+     * 根据给定的类对字符串中可能存在的替换位做替换。
+     * <p>
+     * 该历史入口保留 MySQL 反引号行为，仅用于老调用方兼容。DAO 主执行链必须使用
+     * {@link #parseColumnNames(String, String, Class, SqlDialect)}。
      * 
      * @param self
      *      当前的属性名
@@ -77,6 +80,7 @@ public class ColumnUtil {
      *      所属的类
      * @return
      */
+    @Deprecated
     public static String parseColumnNames(String self, String str, Class<?> clz) {
         return parseColumnNames(self, str, clz, null);
     }

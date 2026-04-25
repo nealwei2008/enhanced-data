@@ -10,6 +10,9 @@
     </parent>
     <artifactId>enhanced-data-dao</artifactId>
     <name>enhanced-data-dao</name>
+    <properties>
+        <dao.integration.excludedTags>external-integration,container-integration</dao.integration.excludedTags>
+    </properties>
     <dependencies>
         <!-- enhanced related -->
         <dependency>
@@ -50,8 +53,8 @@
         </dependency>
         <!-- unit test -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -67,6 +70,26 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -92,14 +115,30 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.maven.surefire</groupId>
-                        <artifactId>surefire-junit4</artifactId>
-                        <version>3.5.3</version>
-                    </dependency>
-                </dependencies>
+                <configuration>
+                    <excludedGroups>${dao.integration.excludedTags}</excludedGroups>
+                </configuration>
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>dao-integration-tests</id>
+            <properties>
+                <dao.integration.excludedTags>container-integration</dao.integration.excludedTags>
+            </properties>
+        </profile>
+        <profile>
+            <id>dao-external-integration-tests</id>
+            <properties>
+                <dao.integration.excludedTags>container-integration</dao.integration.excludedTags>
+            </properties>
+        </profile>
+        <profile>
+            <id>dao-container-integration-tests</id>
+            <properties>
+                <dao.integration.excludedTags>external-integration</dao.integration.excludedTags>
+            </properties>
+        </profile>
+    </profiles>
 </project>

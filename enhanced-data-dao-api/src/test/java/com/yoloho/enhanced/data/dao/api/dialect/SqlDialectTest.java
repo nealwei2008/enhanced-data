@@ -1,7 +1,7 @@
 package com.yoloho.enhanced.data.dao.api.dialect;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * SQL 方言基础行为测试。
@@ -16,23 +16,23 @@ public class SqlDialectTest {
     public void mysqlDialectTest() {
         SqlDialect dialect = Dialects.mysql();
 
-        Assert.assertEquals("mysql", dialect.name());
-        Assert.assertEquals("`demo_table`", dialect.quoteIdentifier("demo_table"));
-        Assert.assertEquals(" limit 10, 20", dialect.renderPaging(10, 20));
-        Assert.assertTrue(dialect.supportsInsertIgnore());
-        Assert.assertTrue(dialect.supportsReplace());
-        Assert.assertTrue(dialect.supportsUpdateDeleteLimit());
+        Assertions.assertEquals("mysql", dialect.name());
+        Assertions.assertEquals("`demo_table`", dialect.quoteIdentifier("demo_table"));
+        Assertions.assertEquals(" limit 10, 20", dialect.renderPaging(10, 20));
+        Assertions.assertTrue(dialect.supportsInsertIgnore());
+        Assertions.assertTrue(dialect.supportsReplace());
+        Assertions.assertTrue(dialect.supportsUpdateDeleteLimit());
     }
 
     @Test
     public void postgreSqlDialectTest() {
         SqlDialect dialect = Dialects.postgresql();
 
-        Assert.assertEquals("postgresql", dialect.name());
-        Assert.assertEquals("\"demo_table\"", dialect.quoteIdentifier("demo_table"));
-        Assert.assertEquals(" limit 20 offset 10", dialect.renderPaging(10, 20));
-        Assert.assertFalse(dialect.supportsInsertIgnore());
-        Assert.assertFalse(dialect.supportsReplace());
-        Assert.assertFalse(dialect.supportsUpdateDeleteLimit());
+        Assertions.assertEquals("postgresql", dialect.name());
+        Assertions.assertEquals("\"demo_table\"", dialect.quoteIdentifier("demo_table"));
+        Assertions.assertEquals(" limit 20 offset 10", dialect.renderPaging(10, 20));
+        Assertions.assertFalse(dialect.supportsInsertIgnore());
+        Assertions.assertFalse(dialect.supportsReplace());
+        Assertions.assertFalse(dialect.supportsUpdateDeleteLimit());
     }
 }

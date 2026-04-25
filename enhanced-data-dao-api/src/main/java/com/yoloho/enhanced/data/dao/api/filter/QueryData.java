@@ -2,6 +2,16 @@ package com.yoloho.enhanced.data.dao.api.filter;
 
 import java.util.HashMap;
 
+/**
+ * DAO 查询参数载体。
+ * <p>
+ * 该类保存 {@link DynamicQueryFilter} 渲染出的 where、sort、limit 和 MyBatis 参数。
+ * 调用方通常不需要手工构造本类，推荐通过 {@link DynamicQueryFilter#getQueryData()} 或
+ * {@link DynamicQueryFilter#getQueryData(com.yoloho.enhanced.data.dao.api.dialect.SqlDialect)} 创建。
+ *
+ * @author jason
+ * @author neal_wei @ Apr 25, 2026
+ */
 public class QueryData extends HashMap<String, Object> {
     private static final long serialVersionUID = 1L;
 

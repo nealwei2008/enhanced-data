@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 import com.yoloho.enhanced.common.util.StringUtil;
 import com.yoloho.enhanced.data.dao.api.ExprEntry;
+import com.yoloho.enhanced.data.dao.api.dialect.DialectType;
 import com.yoloho.enhanced.data.dao.api.ParamUtil;
 import com.yoloho.enhanced.data.dao.api.dialect.SqlDialect;
 import com.yoloho.enhanced.data.dao.api.filter.FieldCommand.Operator;
@@ -21,19 +22,28 @@ import com.yoloho.enhanced.data.dao.api.filter.FieldCommand.Type;
 import com.yoloho.enhanced.data.dao.util.ColumnUtil;
 
 /**
- * 查询过滤器: 封装前端提交的查询请求
- * 
+ * 查询过滤器: 封装前端提交的查询请求。
+ * <p>
+ * 常规条件可以直接调用 {@link #getQueryData()} 生成 DAO 参数；包含
+ * {@link com.yoloho.enhanced.data.dao.api.MysqlExpr} 或
+ * {@link com.yoloho.enhanced.data.dao.api.PostgreSqlExpr} 的方言表达式时，应在调用方显式传入
+ * {@link SqlDialect}，或把原始 {@code DynamicQueryFilter} 交给 DAO 执行链重新按绑定方言渲染。
+ * <p>
  * ×将between...and分解为gt和lt
- * 
+ *
+ * @author jason
+ * @author neal_wei @ Apr 25, 2026
  */
 public class DynamicQueryFilter implements java.io.Serializable {
 	private static final long serialVersionUID = 8790528179232633456L;
-	public static final Logger logger = LoggerFactory.getLogger(DynamicQueryFilter.class);
+    public static final Logger logger = LoggerFactory.getLogger(DynamicQueryFilter.class);
     public static final String KEY_FILTER_SOURCE = "__EnhancedDynamicQueryFilter__";
     public static final String KEY_APPEND_SQL = "__EnhancedDynamicQueryAppendSql__";
+    public static final String KEY_LIMIT_EXPLICIT = "__EnhancedDynamicQueryLimitExplicit__";
 
 	private int offset = 0;
 	private int limit = 20;
+    private boolean limitExplicit = false;
 	private String filterName = "";
 	private List<Object> paramValues;
 	private List<QueryCommand> commands;
@@ -109,6 +119,23 @@ public class DynamicQueryFilter implements java.io.Serializable {
      */
     public <T> DynamicQueryFilter expr(String fieldName, Operator operator, ExprEntry expr) {
         return addFilter(fieldName, operator, Type.Expression, expr);
+    }
+
+    /**
+     * 添加方言表达式。
+     * <p>
+     * 该入口用于 JSONB、find_in_set 等单表方言条件。表达式负责声明字段、所属方言和渲染逻辑，
+     * DAO 执行链会使用启动期解析出的方言进行 SQL 片段渲染。
+     *
+     * @param expr 方言表达式
+     * @return
+     */
+    public DynamicQueryFilter expr(ExprEntry expr) {
+        Preconditions.checkNotNull(expr);
+        if (!expr.isDialectExpression()) {
+            throw new RuntimeException("方言表达式缺少字段、方言或渲染器");
+        }
+        return addFilter(expr.getFieldName(), Operator.equal, Type.Expression, expr);
     }
     
     public <T> DynamicQueryFilter equalPair(String fieldName, T value) {
@@ -221,6 +248,7 @@ public class DynamicQueryFilter implements java.io.Serializable {
         }
         offset = (page - 1) * pageSize;
         limit = pageSize;
+        limitExplicit = true;
         return this;
     }
     
@@ -235,6 +263,7 @@ public class DynamicQueryFilter implements java.io.Serializable {
     public DynamicQueryFilter limit(int offset, int count) {
         this.offset = offset;
         this.limit = count;
+        limitExplicit = true;
         return this;
     }
     
@@ -247,6 +276,7 @@ public class DynamicQueryFilter implements java.io.Serializable {
     public DynamicQueryFilter limit(int count) {
         this.offset = 0;
         this.limit = count;
+        limitExplicit = true;
         return this;
     }
     
@@ -306,9 +336,23 @@ public class DynamicQueryFilter implements java.io.Serializable {
 		String fieldKey = operation + "_" + property + "_" + (filterName != null && filterName.length() > 0 ? (filterName + "_") : "") + parameterMap.size();
 		// to underline format
 		String fieldName = StringUtil.toUnderline(property);
+        String quotedFieldName = dialect == null ? fieldName : dialect.quoteIdentifier(fieldName);
+        String fieldKeyReplace = String.format("#{%s}", fieldKey);
 
 		if (value instanceof ExprEntry) {
 		    ExprEntry expr = (ExprEntry) value;
+            if (expr.isDialectExpression()) {
+                if (dialect == null) {
+                    throw new RuntimeException("方言表达式需要 DAO 执行链提供 SQL 方言");
+                }
+                if (expr.getDialectType() != DialectType.AUTO
+                        && !expr.getDialectType().name().equalsIgnoreCase(dialect.name())) {
+                    throw new RuntimeException("方言表达式与当前 SQL 方言不匹配: " + expr.getDialectType()
+                            + " vs " + dialect.name());
+                }
+                parameterMap.put(fieldKey, expr.getValue());
+                return expr.render(dialect, quotedFieldName, fieldKeyReplace);
+            }
 		    //特殊处理表达式类型
 		    String op = null;
 		    switch (operation) {
@@ -345,59 +389,56 @@ public class DynamicQueryFilter implements java.io.Serializable {
             }
 		    if (name == null) {
 		        //普通处理方式
-    		    name = fieldName;
+                name = quotedFieldName;
 		    }
             return String.format("%s%s%s", name, op,
                     ColumnUtil.parseColumnNames(property, expr.getValue(), expr.getClz(), dialect));
 		}
-		String fieldKeyReplace = String.format("#{%s}", fieldKey);
 		switch (operation) {
             case lessThan:
-                partHql = (new StringBuilder(String.valueOf(fieldName))).append(" <").append(fieldKeyReplace).toString();
+                partHql = (new StringBuilder(String.valueOf(quotedFieldName))).append(" <").append(fieldKeyReplace).toString();
                 parameterMap.put(fieldKey, value);
                 break;
             case greatThan:
-                partHql = (new StringBuilder(String.valueOf(fieldName))).append(" > ").append(fieldKeyReplace).toString();
+                partHql = (new StringBuilder(String.valueOf(quotedFieldName))).append(" > ").append(fieldKeyReplace).toString();
                 parameterMap.put(fieldKey, value);
                 break;
             case greatOrEqual:
-                partHql = (new StringBuilder(String.valueOf(fieldName))).append(" >= ").append(fieldKeyReplace).toString();
+                partHql = (new StringBuilder(String.valueOf(quotedFieldName))).append(" >= ").append(fieldKeyReplace).toString();
                 parameterMap.put(fieldKey, value);
                 break;
             case lessOrEqual:
-                partHql = (new StringBuilder(String.valueOf(fieldName))).append(" <= ").append(fieldKeyReplace).toString();
+                partHql = (new StringBuilder(String.valueOf(quotedFieldName))).append(" <= ").append(fieldKeyReplace).toString();
                 parameterMap.put(fieldKey, value);
                 break;
             case like:
-                partHql = (new StringBuilder(String.valueOf(fieldName))).append(" like ").append(fieldKeyReplace).toString();
+                partHql = (new StringBuilder(String.valueOf(quotedFieldName))).append(" like ").append(fieldKeyReplace).toString();
                 parameterMap.put(fieldKey, "%" + value + "%");
                 break;
             case startsWith:
-                partHql = (new StringBuilder(String.valueOf(fieldName))).append(" like ").append(fieldKeyReplace).toString();
+                partHql = (new StringBuilder(String.valueOf(quotedFieldName))).append(" like ").append(fieldKeyReplace).toString();
                 parameterMap.put(fieldKey, value + "%");
                 break;
             case endsWith:
-                partHql = (new StringBuilder(String.valueOf(fieldName))).append(" like ").append(fieldKeyReplace).toString();
+                partHql = (new StringBuilder(String.valueOf(quotedFieldName))).append(" like ").append(fieldKeyReplace).toString();
                 parameterMap.put(fieldKey, "%" + value);
                 break;
             case isNull:
-                partHql = (new StringBuilder(String.valueOf(fieldName))).append(" is null ").toString();
+                partHql = (new StringBuilder(String.valueOf(quotedFieldName))).append(" is null ").toString();
                 break;
             case isNotNull:
-                partHql = (new StringBuilder(String.valueOf(fieldName))).append(" is not null ").toString();
+                partHql = (new StringBuilder(String.valueOf(quotedFieldName))).append(" is not null ").toString();
                 break;
             case inJoinString:
-                if (dialect == null) {
-                    partHql = String.format("concat(',', `%s`, ',') like %s", fieldName, fieldKeyReplace);
-                } else {
-                    partHql = dialect.renderJoinedStringContains(fieldName, fieldKeyReplace);
-                }
+                partHql = dialect == null
+                        ? String.format("concat(',', `%s`, ',') like %s", fieldName, fieldKeyReplace)
+                        : dialect.renderJoinedStringContains(fieldName, fieldKeyReplace);
                 parameterMap.put(fieldKey, "%," + value + ",%");
                 break;
             case in:
             case notIn: {
                 List<String> valueList = ParamUtil.getCollection(value);
-                StringBuilder sb = new StringBuilder(String.valueOf(fieldName))
+                StringBuilder sb = new StringBuilder(String.valueOf(quotedFieldName))
                         .append(operation == Operator.notIn ? " not  " : " ").append("in")
                         .append(" ( ");
                 for (int i = 0; i < valueList.size(); i++) {
@@ -411,11 +452,11 @@ public class DynamicQueryFilter implements java.io.Serializable {
                 break;
             }
             case notEqual:
-                partHql = (new StringBuilder(String.valueOf(fieldName))).append(" !=").append(fieldKeyReplace).toString();
+                partHql = (new StringBuilder(String.valueOf(quotedFieldName))).append(" !=").append(fieldKeyReplace).toString();
                 parameterMap.put(fieldKey, value);
                 break;
             case equal:
-                partHql = (new StringBuilder(String.valueOf(partHql))).append(fieldName).append(" =")
+                partHql = (new StringBuilder(String.valueOf(partHql))).append(quotedFieldName).append(" =")
                         .append(fieldKeyReplace).toString();
                 parameterMap.put(fieldKey, value);
                 break;
@@ -423,7 +464,7 @@ public class DynamicQueryFilter implements java.io.Serializable {
                 if (dialect == null) {
                     partHql = fieldName + " <= FROM_UNIXTIME(" + fieldKeyReplace + ")";
                 } else {
-                    partHql = dialect.renderTimestampCompare(fieldName, "<=", fieldKeyReplace);
+                    partHql = dialect.renderTimestampCompare(quotedFieldName, "<=", fieldKeyReplace);
                 }
                 parameterMap.put(fieldKey, value);
                 break;
@@ -431,7 +472,7 @@ public class DynamicQueryFilter implements java.io.Serializable {
                 if (dialect == null) {
                     partHql = fieldName + " >= FROM_UNIXTIME(" + fieldKeyReplace + ")";
                 } else {
-                    partHql = dialect.renderTimestampCompare(fieldName, ">=", fieldKeyReplace);
+                    partHql = dialect.renderTimestampCompare(quotedFieldName, ">=", fieldKeyReplace);
                 }
                 parameterMap.put(fieldKey, value);
                 break;
@@ -442,10 +483,24 @@ public class DynamicQueryFilter implements java.io.Serializable {
         return partHql;
 	}
 
+    /**
+     * 使用历史默认渲染规则生成查询参数。
+     * <p>
+     * 该入口适用于普通条件。包含方言表达式时应使用 {@link #getQueryData(SqlDialect)}。
+     *
+     * @return 查询参数
+     */
     public QueryData getQueryData() {
         return getQueryData((SqlDialect) null);
     }
 
+    /**
+     * 使用指定 SQL 方言渲染查询参数。
+     *
+     * @param dialect
+     *      SQL 方言；普通条件可为空，方言表达式必须提供
+     * @return 查询参数
+     */
     public QueryData getQueryData(SqlDialect dialect) {
         QueryData map = new QueryData();
         QueryCommand cmd = null;
@@ -468,7 +523,7 @@ public class DynamicQueryFilter implements java.io.Serializable {
                 } else {
                     orderBy.append("order by ");
                 }
-                orderBy.append(((SortCommandImpl)cmd).getPartSql());
+                orderBy.append(((SortCommandImpl)cmd).getPartSql(dialect));
             }
         }
         
@@ -505,13 +560,32 @@ public class DynamicQueryFilter implements java.io.Serializable {
         map.put("SortSQL", orderBy.length() > 0 ? orderBy.toString() : null);
         map.setLimit(offset, limit);
         map.put(KEY_FILTER_SOURCE, this);
+        map.put(KEY_LIMIT_EXPLICIT, limitExplicit);
         return map;
     }
 
+    /**
+     * 追加原始 SQL 条件片段并生成查询参数。
+     * <p>
+     * 该方法保留历史行为，调用方必须保证追加 SQL 的安全性。
+     *
+     * @param sql
+     *      追加的 SQL 条件片段
+     * @return 查询参数
+     */
     public QueryData getQueryData(String sql) {
         return getQueryData(sql, null);
     }
 
+    /**
+     * 使用指定方言渲染查询参数，并追加原始 SQL 条件片段。
+     *
+     * @param sql
+     *      追加的 SQL 条件片段
+     * @param dialect
+     *      SQL 方言
+     * @return 查询参数
+     */
     public QueryData getQueryData(String sql, SqlDialect dialect) {
         QueryData map = getQueryData(dialect);
         if(StringUtils.isNotEmpty(sql)){

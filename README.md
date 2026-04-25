@@ -46,10 +46,38 @@ Implementation of DAO components under mybatis.
 
 See the [documentation](enhanced-data-dao/README.md).
 
+This version adds SQL dialect support for MySQL and PostgreSQL. Existing MySQL projects can keep the
+default behavior, while PostgreSQL or multi-data-source projects should configure the DAO dialect
+explicitly. See the [DAO upgrade guide](enhanced-data-dao/README.md#upgrade-guide) and
+[SQL dialect design](enhanced-data-dao/docs/SQL_Dialect_Design.md). 中文说明见
+[DAO 中文文档](enhanced-data-dao/README.zh-CN.md) 和
+[SQL 方言设计](enhanced-data-dao/docs/SQL_Dialect_Design.zh-CN.md)。
+
 # enhanced-data-dao-sharding
 Implementation of sharding DAO.
 
 See the [documentation](enhanced-data-dao-sharding/README.md).
+
+# Tests
+Default test execution runs only tests that do not depend on external services.
+
+```bash
+mvn test
+```
+
+Integration tests are split into external-service and Testcontainers variants.
+
+```bash
+# Uses manually configured external MySQL/Redis test services.
+mvn test -Pdao-external-integration-tests
+mvn test -Psharding-external-integration-tests
+mvn test -Pcache-external-integration-tests
+
+# Starts MySQL/PostgreSQL/Redis through Testcontainers. Docker must be available.
+mvn test -Pdao-container-integration-tests
+mvn test -Psharding-container-integration-tests
+mvn test -Pcache-container-integration-tests
+```
 
 # Change log
 ## 1.1.7
@@ -89,4 +117,3 @@ Fix:
 
 ## 1.0.0
 * Initial for open source
-

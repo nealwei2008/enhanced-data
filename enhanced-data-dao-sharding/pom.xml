@@ -11,6 +11,9 @@
     </parent>
     <artifactId>enhanced-data-dao-sharding</artifactId>
     <name>enhanced-data-dao-sharding</name>
+    <properties>
+        <sharding.integration.excludedTags>external-integration,container-integration</sharding.integration.excludedTags>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -45,9 +48,50 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>${sharding.integration.excludedTags}</excludedGroups>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
+        <profile>
+            <id>sharding-integration-tests</id>
+            <properties>
+                <sharding.integration.excludedTags>container-integration</sharding.integration.excludedTags>
+            </properties>
+        </profile>
+        <profile>
+            <id>sharding-external-integration-tests</id>
+            <properties>
+                <sharding.integration.excludedTags>container-integration</sharding.integration.excludedTags>
+            </properties>
+        </profile>
+        <profile>
+            <id>sharding-container-integration-tests</id>
+            <properties>
+                <sharding.integration.excludedTags>external-integration</sharding.integration.excludedTags>
+            </properties>
+        </profile>
+    </profiles>
 </project>

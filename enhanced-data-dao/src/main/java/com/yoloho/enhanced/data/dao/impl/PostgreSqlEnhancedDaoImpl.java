@@ -35,26 +35,43 @@ public class PostgreSqlEnhancedDaoImpl<T, PK extends Serializable> extends Abstr
         super(beanClass, tableName, sqlSessionFactory);
     }
 
+    /**
+     * PostgreSQL 标准插入语法需要 {@code insert into}。
+     *
+     * @param ignore
+     *      MySQL 兼容参数，PostgreSQL 实现不使用
+     * @param replace
+     *      MySQL 兼容参数，PostgreSQL 实现不使用
+     * @return PostgreSQL insert 操作关键字
+     */
+    @Override
+    protected String getInsertOperation(boolean ignore, boolean replace) {
+        return "insert into";
+    }
+
     @Override
     public int insertOnConflictDoNothing(@NonNull T bean, @NonNull String... conflictColumns) {
-        throw new UnsupportedOperationException("PostgreSQL on conflict do nothing is not implemented yet");
+        List<T> beans = java.util.Collections.singletonList(bean);
+        return insertOnConflictDoNothing(beans, conflictColumns);
     }
 
     @Override
     public int insertOnConflictDoNothing(@NonNull List<T> beanList, @NonNull String... conflictColumns) {
-        throw new UnsupportedOperationException("PostgreSQL on conflict do nothing is not implemented yet");
+        return insertWithSuffix(beanList, buildOnConflictDoNothingSuffix(conflictColumns));
     }
 
     @Override
     @NonNull
     public T insertOnConflictDoNothingAndReturn(@NonNull T bean, @NonNull String... conflictColumns) {
-        throw new UnsupportedOperationException("PostgreSQL on conflict do nothing is not implemented yet");
+        List<T> beans = java.util.Collections.singletonList(bean);
+        List<T> list = insertOnConflictDoNothingAndReturn(beans, conflictColumns);
+        return list.get(0);
     }
 
     @Override
     @NonNull
     public List<T> insertOnConflictDoNothingAndReturn(@NonNull List<T> beanList,
             @NonNull String... conflictColumns) {
-        throw new UnsupportedOperationException("PostgreSQL on conflict do nothing is not implemented yet");
+        return insertAndReturnWithSuffix(beanList, buildOnConflictDoNothingSuffix(conflictColumns));
     }
 }
