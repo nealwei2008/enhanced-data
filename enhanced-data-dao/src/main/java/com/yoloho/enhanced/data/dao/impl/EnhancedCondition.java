@@ -5,6 +5,15 @@ import java.util.List;
 import com.google.common.collect.Lists;
 import com.yoloho.enhanced.data.dao.api.filter.QueryData;
 
+/**
+ * enhanced-dao 通用 MyBatis XML 的参数对象。
+ * <p>
+ * 该类在 {@link AbstractEnhancedDao} 内部使用，用于统一保存表名、字段、分页、
+ * 更新/删除限制和 insert suffix 等通用 SQL 模板参数。
+ *
+ * @author jason
+ * @author neal_wei @ Apr 25, 2026
+ */
 public class EnhancedCondition extends QueryData {
     private static final long serialVersionUID = 1L;
     /**
@@ -24,6 +33,22 @@ public class EnhancedCondition extends QueryData {
         } else {*/
         put("genericTableName", genericTableName);
         //}
+    }
+
+    public void setPagingSql(String pagingSql) {
+        put("PagingSQL", pagingSql);
+    }
+
+    public void setUpdateLimitSql(String updateLimitSql) {
+        put("UpdateLimitSQL", updateLimitSql);
+    }
+
+    public void setDeleteLimitSql(String deleteLimitSql) {
+        put("DeleteLimitSQL", deleteLimitSql);
+    }
+
+    public void setInsertSuffixSql(String insertSuffixSql) {
+        put("InsertSuffixSQL", insertSuffixSql);
     }
     
     public EnhancedCondition(EnhancedCondition condition) {

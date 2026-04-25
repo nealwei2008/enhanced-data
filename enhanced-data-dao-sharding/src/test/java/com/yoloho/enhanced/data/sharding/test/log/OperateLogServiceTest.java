@@ -2,18 +2,13 @@ package com.yoloho.enhanced.data.sharding.test.log;
 
 import java.util.Date;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.yoloho.enhanced.data.sharding.impl.ShardedDaoImpl;
 import com.yoloho.enhanced.data.sharding.support.util.ShardingFactorUtils;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "classpath:context.xml")
-public class OperateLogServiceTest {
+public abstract class OperateLogServiceTest {
 
 	@Autowired
 	ShardedDaoImpl<OperateLog, Long> operateLogShardedDao;

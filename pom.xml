@@ -14,7 +14,7 @@
     <version>${revision}</version>
     <packaging>pom</packaging>
     <properties>
-        <revision>1.2.0</revision>
+        <revision>1.2.1-SNAPSHOT</revision>
     </properties>
     <modules>
         <module>enhanced-data-dao-api</module>

@@ -1,10 +1,10 @@
 package com.yoloho.enhanced.data.cache.redis;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,11 +12,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.google.common.collect.Maps;
 import com.yoloho.enhanced.data.cache.redis.api.RedisService;
@@ -25,10 +22,7 @@ import com.yoloho.enhanced.data.cache.redis.api.RedisService;
  * @author mei
  * @since 26/12/2017
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration("classpath:context-redis.xml")
-//@Ignore
-public class RedisServiceTest {
+public abstract class RedisServiceTest {
 
     @Autowired
     private RedisService redisService;

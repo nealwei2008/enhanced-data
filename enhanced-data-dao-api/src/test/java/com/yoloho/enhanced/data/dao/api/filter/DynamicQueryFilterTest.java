@@ -1,6 +1,6 @@
 package com.yoloho.enhanced.data.dao.api.filter;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -8,14 +8,17 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.yoloho.enhanced.common.util.JoinerSplitters;
 import com.yoloho.enhanced.data.dao.api.ExprEntry;
 import com.yoloho.enhanced.data.dao.api.IgnoreKey;
+import com.yoloho.enhanced.data.dao.api.MysqlExpr;
+import com.yoloho.enhanced.data.dao.api.PostgreSqlExpr;
+import com.yoloho.enhanced.data.dao.api.dialect.Dialects;
 import com.yoloho.enhanced.data.dao.api.filter.DynamicQueryFilter;
 import com.yoloho.enhanced.data.dao.api.filter.FieldCommand.Operator;
 import com.yoloho.enhanced.data.dao.api.filter.FieldCommand.Type;
@@ -149,17 +152,17 @@ public class DynamicQueryFilterTest {
     public void exprTest() {
         DynamicQueryFilter filter = new DynamicQueryFilter();
         filter.expr("id", Operator.equal, new ExprEntry("@displayName@ + 1", Demo.class));
-        Assert.assertEquals("id = `display_name` + 1", filter.getQueryData().getWhere());
+        Assertions.assertEquals("id = `display_name` + 1", filter.getQueryData().getWhere());
         filter = new DynamicQueryFilter();
         filter.expr("displayName", Operator.greatOrEqual, new ExprEntry("1", Demo.class));
-        Assert.assertEquals("display_name >= 1", filter.getQueryData().getWhere());
+        Assertions.assertEquals("display_name >= 1", filter.getQueryData().getWhere());
         filter = new DynamicQueryFilter();
         //注意，这里仅是个单元测试，不建议这么用
         filter.expr("length(displayName)", Operator.greatOrEqual, new ExprEntry("unix_timestam()", Demo.class));
-        Assert.assertEquals("length(display_name) >= unix_timestam()", filter.getQueryData().getWhere());
+        Assertions.assertEquals("length(display_name) >= unix_timestam()", filter.getQueryData().getWhere());
         filter = new DynamicQueryFilter();
         filter.expr("length(@displayName@)", Operator.greatOrEqual, new ExprEntry("unix_timestam()", Demo.class));
-        Assert.assertEquals("length(`display_name`) >= unix_timestam()", filter.getQueryData().getWhere());
+        Assertions.assertEquals("length(`display_name`) >= unix_timestam()", filter.getQueryData().getWhere());
     }
     
     @Test
@@ -168,6 +171,32 @@ public class DynamicQueryFilterTest {
         filter.orderBy("a", true)
               .orderBy("b", false);
         assertEquals("order by a desc, b asc", filter.getQueryData().get("SortSQL"));
+        assertEquals("order by \"a\" desc, \"b\" asc", filter.getQueryData(Dialects.postgresql()).get("SortSQL"));
+    }
+
+    @Test
+    public void dialectExpressionTest() {
+        DynamicQueryFilter filter = new DynamicQueryFilter()
+                .expr(PostgreSqlExpr.jsonbContains(Demo.class, "displayName", "{\"channel\":\"amazon\"}"));
+
+        Assertions.assertEquals("\"display_name\" @> #{equal_displayName_0}::jsonb",
+                filter.getQueryData(Dialects.postgresql()).getWhere());
+        Assertions.assertEquals("{\"channel\":\"amazon\"}",
+                filter.getQueryData(Dialects.postgresql()).get("equal_displayName_0"));
+
+        filter = new DynamicQueryFilter()
+                .expr(MysqlExpr.findInSet(Demo.class, "displayName", "sale"));
+        Assertions.assertEquals("find_in_set(#{equal_displayName_0}, `display_name`)",
+                filter.getQueryData(Dialects.mysql()).getWhere());
+    }
+
+    @Test
+    public void explicitLimitMarkerTest() {
+        DynamicQueryFilter filter = new DynamicQueryFilter();
+        Assertions.assertEquals(Boolean.FALSE, filter.getQueryData().get(DynamicQueryFilter.KEY_LIMIT_EXPLICIT));
+
+        filter.limit(10);
+        Assertions.assertEquals(Boolean.TRUE, filter.getQueryData().get(DynamicQueryFilter.KEY_LIMIT_EXPLICIT));
     }
 
 }

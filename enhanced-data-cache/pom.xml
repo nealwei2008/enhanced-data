@@ -10,6 +10,9 @@
 	</parent>
 	<artifactId>enhanced-data-cache</artifactId>
 	<name>enhanced-data-cache</name>
+    <properties>
+        <cache.integration.excludedTags>external-integration,container-integration</cache.integration.excludedTags>
+    </properties>
 	<dependencies>
         <!-- enhanced -->
         <dependency>
@@ -56,8 +59,8 @@
 		</dependency>
         <!-- unit test -->
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -71,9 +74,9 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-		    <groupId>org.mockito</groupId>
-		    <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
     <build>
@@ -111,9 +114,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>-javaagent:${user.home}/.m2/repository/org/aspectj/aspectjweaver/1.9.25/aspectjweaver-1.9.25.jar</argLine>
-                </configuration>
+	                <configuration>
+	                    <argLine>-javaagent:${user.home}/.m2/repository/org/aspectj/aspectjweaver/1.9.25/aspectjweaver-1.9.25.jar</argLine>
+                        <excludedGroups>${cache.integration.excludedTags}</excludedGroups>
+	                </configuration>
                 <goals>
                     <goal>test</goal>
                 </goals>
@@ -182,5 +186,25 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-    </build>
+	    </build>
+    <profiles>
+        <profile>
+            <id>cache-integration-tests</id>
+            <properties>
+                <cache.integration.excludedTags>container-integration</cache.integration.excludedTags>
+            </properties>
+        </profile>
+        <profile>
+            <id>cache-external-integration-tests</id>
+            <properties>
+                <cache.integration.excludedTags>container-integration</cache.integration.excludedTags>
+            </properties>
+        </profile>
+        <profile>
+            <id>cache-container-integration-tests</id>
+            <properties>
+                <cache.integration.excludedTags>external-integration</cache.integration.excludedTags>
+            </properties>
+        </profile>
+    </profiles>
 </project>

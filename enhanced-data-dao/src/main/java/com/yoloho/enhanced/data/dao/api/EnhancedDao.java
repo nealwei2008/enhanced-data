@@ -17,6 +17,7 @@ import com.yoloho.enhanced.data.dao.api.filter.QueryData;
  * Service可以定义成纯粹的Service，并在Service中使用EnhancedDao
  * 
  * @author jason<jason@dayima.com> @ Jun 4, 2018
+ * @author neal_wei @ Apr 23, 2026
  *
  * @param <T>
  * @param <PK>
@@ -31,14 +32,6 @@ public interface EnhancedDao<T, PK extends Serializable> {
     public int insert(@NonNull T bean);
     
     /**
-     * 插入，重复主键时是否忽略插入
-     * 
-     * @param bean
-     * @return
-     */
-    public int insert(@NonNull T bean, boolean ignore);
-    
-    /**
      * 插入并返回插入后的bean(尤其适用有自增主键时)
      * 
      * @param bean
@@ -48,29 +41,12 @@ public interface EnhancedDao<T, PK extends Serializable> {
     public T insertAndReturn(@NonNull T bean);
     
     /**
-     * 插入并返回插入后的bean(尤其适用有自增主键时)
-     * 
-     * @param bean
-     * @return
-     */
-    @NonNull
-    public T insertAndReturn(@NonNull T bean, boolean ignore);
-
-    /**
      * 批量插入
      * 
      * @param beanList
      * @return
      */
     public int insert(@NonNull List<T> beanList);
-    
-    /**
-     * 批量插入
-     * 
-     * @param beanList
-     * @return
-     */
-    public int insert(@NonNull List<T> beanList, boolean ignore);
     
     /**
      * 批量插入并返回插入后的bean(尤其适用有自增主键时)
@@ -80,55 +56,6 @@ public interface EnhancedDao<T, PK extends Serializable> {
      */
     @NonNull
     public List<T> insertAndReturn(@NonNull List<T> beanList);
-    
-    /**
-     * 批量插入并返回插入后的bean(尤其适用有自增主键时)
-     * 
-     * @param beanList
-     * @return
-     */
-    @NonNull
-    public List<T> insertAndReturn(@NonNull List<T> beanList, boolean ignore);
-    
-    /**
-     * 替换插入
-     * 
-     * @param bean
-     * @return 
-     *      affect rows
-     *      <p>
-     *      这里需要注意，对于replace来说，至少返回影响行数1，如果大于1，说明有"replace"发生
-     */
-    public int replace(@NonNull T bean);
-    
-    /**
-     * 插入并返回插入后的bean(尤其适用有自增主键时)
-     * 
-     * @param bean
-     * @return
-     */
-    @NonNull
-    public T replaceAndReturn(@NonNull T bean);
-    
-    /**
-     * 批量插入
-     * 
-     * @param beanList
-     * @return
-     *      affect rows
-     *      <p>
-     *      这里需要注意，对于replace来说，至少返回影响行数1，如果大于1，说明有"replace"发生
-     */
-    public int replace(@NonNull List<T> beanList);
-    
-    /**
-     * 批量插入并返回插入后的bean(尤其适用有自增主键时)
-     * 
-     * @param beanList
-     * @return
-     */
-    @NonNull
-    public List<T> replaceAndReturn(@NonNull List<T> beanList);
     
     /**
      * 主键删除
