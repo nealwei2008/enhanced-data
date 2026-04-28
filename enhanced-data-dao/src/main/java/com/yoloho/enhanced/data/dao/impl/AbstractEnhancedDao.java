@@ -788,13 +788,12 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
             //union key
             UnionPrimaryKey primaryValues = (UnionPrimaryKey)key;
             for (String name : primaryKeys) {
-                filter.equalPair(name, primaryValues.get(name).toString());
+                appendEqualFilter(filter, name, primaryValues.get(name));
             }
         } else {
             //simple key
             for (String name : primaryKeys) {
-                //这里暂时先简单粗暴地处理掉
-                filter.equalPair(name, key.toString());
+                appendEqualFilter(filter, name, key);
             }
         }
         filter.limit(1);
@@ -817,7 +816,7 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
                 for (String name : primaryKeys) {
                     Object obj = primaryValues.get(name);
                     Preconditions.checkNotNull(obj, "主键不能有null值");
-                    subFilter.equalPair(name, obj.toString());
+                    appendEqualFilter(subFilter, name, obj);
                 }
                 filter.addSubFilter(subFilter);
             }
@@ -833,6 +832,17 @@ public abstract class AbstractEnhancedDao<T, PK extends Serializable> extends Sq
         QueryData queryData = renderQueryData(filter);
         queryData.put(KEY_PRIMARY_QUERY, Boolean.TRUE);
         return queryData;
+    }
+
+    private void appendEqualFilter(DynamicQueryFilter filter, String name, Object value) {
+        Preconditions.checkNotNull(value, "主键不能为null");
+        if (value instanceof Number) {
+            filter.equalPair(name, (Number) value);
+        } else if (value instanceof String) {
+            filter.equalPair(name, (String) value);
+        } else {
+            filter.equalPair(name, String.valueOf(value));
+        }
     }
     
     @Override

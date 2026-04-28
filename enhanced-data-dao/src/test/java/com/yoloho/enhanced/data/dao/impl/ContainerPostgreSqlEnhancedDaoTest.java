@@ -95,6 +95,7 @@ public class ContainerPostgreSqlEnhancedDaoTest {
         bean.setProfile(jsonb("{\"channel\":\"amazon\",\"tier\":\"bronze\"}"));
         bean = dao.insertOnConflictDoNothingAndReturn(bean, "uid");
         Assertions.assertTrue(bean.getId() > 0);
+        Assertions.assertEquals("delta", dao.get(bean.getId()).getDisplayName());
 
         PostgreSqlUnitTestUser duplicate = new PostgreSqlUnitTestUser();
         duplicate.setUid(1000);
